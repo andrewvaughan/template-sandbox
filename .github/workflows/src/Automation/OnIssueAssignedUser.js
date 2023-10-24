@@ -1,5 +1,7 @@
 /**
- * Provides utilities for logging to GitHub Actions.
+ * Provides utilities for logging to GitHub Actions
+ *
+ * @see {@link ../../auto-issue-assign-user.yml}
  *
  * @author Andrew Vaughan <hello@andrewvaughan.io>
  * @license MIT
@@ -25,14 +27,14 @@ const Logger = require("./.github/workflows/src/Logger");
 /**
  * TODO
  */
-module.exports = async function(github, context, core, glob, io, exec, fetch) {
+module.exports = async function (github, context, core, glob, io, exec, fetch) {
   /**
    * Remove the `Help Wanted` Label on the issue, if it exists
    */
 
   Logger.startGroup(`Removing 'Help Wanted' Label from Issue #${context.issue.number}.`);
 
-  Logger.debug('Calling GitHub add label API...');
+  Logger.debug("Calling GitHub add label API...");
   // await github.rest.issues.removeLabel({
   //   issue_number: context.issue.number,
   //   owner: context.repo.owner,
@@ -50,18 +52,36 @@ module.exports = async function(github, context, core, glob, io, exec, fetch) {
 
   Logger.startGroup(`Checking if 'Needs Triage' Label is still on Issue #${context.issue.number}.`);
 
-  Logger.debug('Calling GitHub get labels API...')
+  Logger.debug("Calling GitHub get labels API...");
   const issue = await github.rest.issues.get({
     issue_number: context.issue.number,
     owner: context.repo.owner,
     repo: context.repo.repo,
   });
 
+  Logger.debug(issue.data.labels);
 
-  Logger.info(issue.data.labels);
+  await issue.data.labels.forEach(async (label) => {
 
-  issue.data.labels.forEach((label) => {
-    Logger.info(label);
+    if (label["name"].toLowerCase() == "needs triage") {
+      Logger.warning(
+        `The 'Needs Triage' Label is still on Issue #${context.issue.number}, even though a User was just assigned.`,
+        `User assigned to Issue #${context.issue.number} while in Triage`
+      );
+
+      Logger.info(`Adding warning comment to Issue #${context.issue.number}...`);
+
+      await github.rest.issues.createComment({
+        issue_number: context.issue.number,
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        body: "##  :warning: Warning!\n\n" +
+            "A user was just assigned to this issue while the `Needs Triage` Label is still in place. Please be " +
+            "aware that work on this Issue may not be worthwhile until the Issue has been approved from Triage and " +
+            "enters the `Available for Development` Project status."
+      });
+    }
+
   });
 
   Logger.endGroup();

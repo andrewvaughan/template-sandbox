@@ -326,7 +326,7 @@ module.exports = class Logger {
     command = command.slice(0, -1);
 
     if (typeof message !== "string") {
-      message = Object.toString(message);
+      message = JSON.stringify(message);
     }
 
     console.log(`::${command}::${message}`);
@@ -344,20 +344,18 @@ module.exports = class Logger {
    * @static
    */
   static _log(message, level, workflowCommand = "", levelANSI = Logger.ANSI.BOLD) {
-
-    if (typeof message !== 'string' && !message instanceof String) {
-      message = JSON.stringify(message);
+    if (typeof message !== "string") {
+      console.log(message);
+      return;
     }
 
-    // const lines = Logger._wrap(message);
+    const lines = Logger._wrap(message);
 
-    // lines.forEach((line) => {
-    //   console.log(Logger._format(line, level, workflowCommand, levelANSI));
-    // });
+    lines.forEach((line) => {
+      console.log(Logger._format(line, level, workflowCommand, levelANSI));
+    });
 
-    console.log(
-      Logger._format(message, level, workflowCommand, levelANSI)
-    );
+    console.log(Logger._format(message, level, workflowCommand, levelANSI));
   }
 
   /**
