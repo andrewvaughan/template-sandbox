@@ -20,7 +20,7 @@ if (global.ghScriptRequire !== undefined) {
   require = global.ghScriptRequire;
 }
 
-const Logger = require("../Logger");
+const Logger = require("./.github/workflows/src/Logger");
 
 /**
  * TODO
