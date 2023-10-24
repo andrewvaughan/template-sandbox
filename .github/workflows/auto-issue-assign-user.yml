@@ -50,6 +50,17 @@ jobs:
       issues: write
 
     steps:
+
+      ##
+      # Checkout the repository workflow source.
+      #
+      - name: Checkout repository workflow source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |-
+            .github/workflows
+
       ##
       # Update the labels on the issue based on the action and the state.
       #
