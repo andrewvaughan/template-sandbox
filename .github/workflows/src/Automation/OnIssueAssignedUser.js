@@ -51,13 +51,13 @@ module.exports = async function(github, context, core, glob, io, exec, fetch) {
   Logger.startGroup(`Checking if 'Needs Triage' Label is still on Issue #${context.issue.number}.`);
 
   Logger.debug('Calling GitHub get labels API...')
-  let labels = await github.rest.issues.get({
+  const issue = await github.rest.issues.get({
     issue_number: context.issue.number,
     owner: context.repo.owner,
     repo: context.repo.repo,
   });
 
-  Logger.info(labels);
+  Logger.info(labels.data.labels);
 
   Logger.endGroup();
 
