@@ -57,7 +57,7 @@ module.exports = async function(github, context, core, glob, io, exec, fetch) {
     repo: context.repo.repo,
   });
 
-  Logger.info(labels.data.labels);
+  Logger.info(issue.data.labels);
 
   Logger.endGroup();
 
