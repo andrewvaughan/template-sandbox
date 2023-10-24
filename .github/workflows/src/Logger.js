@@ -346,7 +346,7 @@ module.exports = class Logger {
   static _log(message, level, workflowCommand = "", levelANSI = Logger.ANSI.BOLD) {
 
     if (typeof message !== 'string' && !message instanceof String) {
-      message = Object.toString(message);
+      message = JSON.stringify(message);
     }
 
     const lines = Logger._wrap(message);
