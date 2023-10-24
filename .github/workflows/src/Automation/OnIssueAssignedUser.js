@@ -57,7 +57,7 @@ module.exports = async function(github, context, core, glob, io, exec, fetch) {
     repo: context.repo.repo,
   });
 
-  Logger.debug(labels);
+  Logger.info(labels);
 
   Logger.endGroup();
 
