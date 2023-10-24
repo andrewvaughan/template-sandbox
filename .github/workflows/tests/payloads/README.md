@@ -6,7 +6,7 @@ These payloads provide event scenarios to `act` to test. More details hre:
 
 For information on GitHub payloads:
 
-https://docs.github.com/en/webhooks/webhook-events-and-payloads
+<https://docs.github.com/en/webhooks/webhook-events-and-payloads>
 
 ## Running with payloads
 

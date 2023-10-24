@@ -1,0 +1,34 @@
+##
+# Nektos Act configuration file.
+#
+# @see @{link https://github.com/nektos/act?tab=readme-ov-file#configuration}
+#
+
+##
+# The user that triggered the faux event for each call.
+#
+# TEMPLATE TODO - Update this to the appropriate user.
+#
+--actor andrewvaughan
+
+##
+# The default branch for this project.
+#
+# TEMPLATE TODO - Update to your default branch name, if different.
+#
+--defaultbranch main
+
+##
+# Load the default event payload. Use `-e` to override this.
+#
+--eventpath .github/workflows/tests/payloads/default.json
+
+##
+# Always remove the container when a failure occurs.
+#
+--rm
+
+##
+# Don't copy in anything from `.gitignore` to the container
+#
+--use-gitignore
