@@ -349,11 +349,15 @@ module.exports = class Logger {
       message = JSON.stringify(message);
     }
 
-    const lines = Logger._wrap(message);
+    // const lines = Logger._wrap(message);
 
-    lines.forEach((line) => {
-      console.log(Logger._format(line, level, workflowCommand, levelANSI));
-    });
+    // lines.forEach((line) => {
+    //   console.log(Logger._format(line, level, workflowCommand, levelANSI));
+    // });
+
+    console.log(
+      Logger._format(message, level, workflowCommand, levelANSI)
+    );
   }
 
   /**
