@@ -35,8 +35,8 @@ module.exports = async function(github, context, core, glob, io, exec, fetch) {
   Logger.debug('Calling GitHub add label API...');
   await github.rest.issues.addLabels({
     issue_number: context.issue.number,
-    owner: github.repo.owner,
-    repo: github.repo.repo,
+    owner: context.repo.owner,
+    repo: context.repo.repo,
     labels: ['Help Wanted'],
   });
 
