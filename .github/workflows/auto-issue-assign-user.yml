@@ -65,7 +65,7 @@ jobs:
             // Provides the modified `github-script` `require` function to classes
             global.ghScriptRequire = require;
 
-            require("./src/Automation/OnIssueAssignedUser")(
+            require(".github/workflows/src/Automation/OnIssueAssignedUser")(
               github,
               context,
               core,
