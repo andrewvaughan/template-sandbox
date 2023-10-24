@@ -1,0 +1,45 @@
+##
+# Operations dictionary.
+#
+# This dictionary contains various special words implemented as part of automation and operational dependencies common
+# to all projects. Don't add words specific to this project in this file. Instead, place those words in the
+# parallel `project.txt` file.
+#
+# @link https://cspell.org/docs/dictionaries-custom/
+#
+
+andrewvaughan
+Anson
+arrowParens
+bierner
+catthehacker
+Checkmake
+Checkmarx
+Chiberia
+CODEOWNERS
+davidanson
+devcontainer
+DevSkim
+eamodio
+ecrc
+esbenp
+Gruntfuggly
+KICS
+linkcheckmd
+Makefiles
+MarkdownLint
+mdtxt
+mdwn
+minphony
+naumovs
+rulesets
+ruleset
+SDLC
+Sergii
+statusBarClickBehaviour
+stefanzweifel
+Trivy
+venv
+Wontfix
+yzhang
+Zhang
