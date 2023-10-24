@@ -26,8 +26,6 @@ const Logger = require("./.github/workflows/src/Logger");
  * TODO
  */
 module.exports = async function(github, context, core, glob, io, exec, fetch) {
-  Logger.startGroup("Automation: Issue Assigned User");
-
   /**
    * Remove the `Help Wanted` Label on the issue, if it exists
    */
@@ -37,8 +35,8 @@ module.exports = async function(github, context, core, glob, io, exec, fetch) {
   Logger.debug('Calling GitHub add label API...');
   await github.rest.issues.addLabels({
     issue_number: context.issue.number,
-    owner: owner,
-    repo: repo,
+    owner: github.repo.owner,
+    repo: github.repo.repo,
     labels: ['Help Wanted'],
   });
 
@@ -78,7 +76,7 @@ module.exports = async function(github, context, core, glob, io, exec, fetch) {
    * Clean up.
    */
 
-  Logger.debug("Cleaning up...");
+  Logger.startGroup("Cleaning up");
 
   Logger.endAllGroups();
 };
