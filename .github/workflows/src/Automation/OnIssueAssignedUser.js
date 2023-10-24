@@ -33,12 +33,12 @@ module.exports = async function(github, context, core, glob, io, exec, fetch) {
   Logger.startGroup(`Removing 'Help Wanted' Label from Issue #${context.issue.number}.`);
 
   Logger.debug('Calling GitHub add label API...');
-  await github.rest.issues.addLabels({
-    issue_number: context.issue.number,
-    owner: context.repo.owner,
-    repo: context.repo.repo,
-    labels: ['Help Wanted'],
-  });
+  // await github.rest.issues.removeLabel({
+  //   issue_number: context.issue.number,
+  //   owner: context.repo.owner,
+  //   repo: context.repo.repo,
+  //   labels: ['Help Wanted'],
+  // });
 
   Logger.info(`Label 'Help Wanted' removed from Issue #${context.issue.number} successfully.`);
   Logger.endGroup();
