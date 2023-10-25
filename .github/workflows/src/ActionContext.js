@@ -20,7 +20,7 @@ module.exports = class ActionContext {
    * @type {context}
    *
    * @public
-   * @constant
+   * @readonly
    * @static
    */
   static context;
@@ -33,7 +33,7 @@ module.exports = class ActionContext {
    * @type {core}
    *
    * @public
-   * @constant
+   * @readonly
    * @static
    */
   static core;
@@ -46,7 +46,7 @@ module.exports = class ActionContext {
    * @type {exec}
    *
    * @public
-   * @constant
+   * @readonly
    * @static
    */
   static exec;
@@ -59,7 +59,7 @@ module.exports = class ActionContext {
    * @type {fetch}
    *
    * @public
-   * @constant
+   * @readonly
    * @static
    */
   static fetch;
@@ -72,7 +72,7 @@ module.exports = class ActionContext {
    * @type {getOctokit}
    *
    * @public
-   * @constant
+   * @readonly
    * @static
    */
   static github;
@@ -85,7 +85,7 @@ module.exports = class ActionContext {
    * @type {glob}
    *
    * @public
-   * @constant
+   * @readonly
    * @static
    */
   static glob;
@@ -98,7 +98,7 @@ module.exports = class ActionContext {
    * @type {io}
    *
    * @public
-   * @constant
+   * @readonly
    * @static
    */
   static io;

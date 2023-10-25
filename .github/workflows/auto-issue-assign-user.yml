@@ -14,7 +14,7 @@
 # This *does* make changes on GitHub. Reserve Issue #1 and Pull Request #1 for testing purposes. To change this
 # configuration, see the `.github/workflows/tests/payloads` directory.
 #
-# @see {@link https://megalinter.io}
+# @see {@link https://docs.github.com/en/webhooks/webhook-events-and-payloads#issues}
 #
 ---
 name: Automation on Issue Assigned to User
@@ -81,4 +81,4 @@ jobs:
             const OnIssues = require(".github/workflows/src/Automation/OnIssues");
             const action = new OnIssues();
 
-            // action.handleUserAssigned();
+            action.handleUserAssigned();

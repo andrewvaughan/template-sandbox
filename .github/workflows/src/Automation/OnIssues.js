@@ -1,32 +1,117 @@
 const ActionContext = require("../ActionContext");
+const Issue = require("../GitHub/Issue");
 const Logger = require("../Logger");
 
 /**
  * OnIssues.
  *
  * @classdesc
- * Action ran when GitHub triggers the `issues` event. The calling workflow must have the `issues: write` permission for
- * this class to work correctly.
+ * Action ran when GitHub triggers the `issues` event.
  *
- * @see {@link https://docs.github.com/en/webhooks/webhook-events-and-payloads#issues}
  * @see {@link https://github.com/actions/github-script}
  *
  * @author Andrew Vaughan <hello@andrewvaughan.io>
  * @license MIT
  *
  * @class
- * @extends GitHubContext
  */
 module.exports = class OnIssues {
 
+  /**
+   * Creates a handler to manage GitHub `issues` events.
+   *
+   * @public
+   * @constructor
+   */
   constructor() {
     this._logger = new Logger("OnIssues");
 
-    this._logger.debug("Checking for `issues:write` permissions...");
+    this._logger.debug("OnIssues.constructor()");
+  }
 
-    this._logger.info("Testing");
 
-    // TODO
+  /**
+   * Handles the user assigned event for Issues.
+   *
+   * @public
+   * @async
+   */
+  async handleUserAssigned() {
+    this._logger.debug("OnIssues.handleUserAssigned()");
+
+    const issue = new Issue(ActionContext.context.issue.number);
+
+    // Remove the `Help Wanted` Label
+    this._logger.startGroup(`Removing 'Help Wanted' Label from Issue #${issue.number}`)
+
+    const labels = await issue.labels;
+
+    let promises = [];
+
+    await labels.forEach(async (label) => {
+      if (label['name'].toLowerCase() == 'help wanted') {
+        await issue.removeLabels(label['name']);
+      }
+    });
+
+    this._logger.endGroup();
+
+
+    // // If the `Needs Triage` Label is still on the Issue, comment a warning
+    // this._logger.startGroup(`Checking for 'Needs Triage' Label on Issue #${issueNumber}`);
+
+    // if (await Issue.hasLabel("Needs Triage")) {
+    //   this._logger.warning(
+    //     "Assigning non-triaged issues can be indicative of not following the defined Software Development Lifecycle. " +
+    //     "A warning will be added to the Issue explaining the risk.",
+    //     `Label 'Needs Triage' found on Issue #${issueNumber} during user assignment`
+    //   );
+
+    //   await Issue.addWarning(
+    //     "This Issue is still marked as being in " +
+    //     "[Triage](https://github.com/andrewvaughan/template-core/blob/main/.github/CONTRIBUTING.md#issue-triage); " +
+    //     "however, a Contributor assignment was just made. Non-triaged issues may not be approved, and any work done " +
+    //     "on unaccepted Issues cannot be guaranteed to be road-mapped.\n\n" +
+    //     "Project Maintainers should Triage this issue or inform the Contributor on whether to move forward."
+    //   );
+    // } else {
+    //   this._logger.notice(
+    //     "Label 'Needs Triage' did not exist on issue during user assignment. This is expected.",
+    //     `Label 'Needs Triage' expectedly missing from Issue #${issueNumber}`
+    //   );
+    // }
+
+    // this._logger.endGroup();
+
+    // // If the Issue's Project status isn't set, `Done`, or `Parking Lot`, comment a warning
+    // this._logger.startGroup(`Checking for valid status on Issue #${issueNumber}`);
+
+    // const status = await Issue.getProjectStatus();
+    // const url = await Issue.getProjectController().url;
+
+    // if (!status || ["Done", "Parking Lot"].includes(status)) {
+    //   this._logger.warning(
+    //     `The status for Issue #${issueNumber} is in Project status '${status}', which is not a part of the Software ` +
+    //     "Development Lifecycle where Contributor assignment would be expected. A warning comment will be added to " +
+    //     "the Issue explaining this.",
+    //     `Issue #${issueNumber} in invalid status for user assignment`
+    //   );
+
+    //   await Issue.addWarning(
+    //     `This Issue is in the [Project's](${url}) \`${status}\` status, meaning it is not currently planned for ` +
+    //     "development. As a Contributor was just assigned to the Issue, please check to make sure that the Project " +
+    //     "status is correct. Contributors should check with the Project Maintainers to ensure assignment to this " +
+    //     "Issue was done purposefully."
+    //   );
+    // } else {
+    //   this._logger.notice(
+    //     "The Issue is currently in a Project status where Contributor assignment would be expected.",
+    //     `Issue #${issueNumber} is in expected Project status for Contributor assignment`
+    //   );
+    // }
+
+    // this._logger.endGroup();
+
   }
 
 };

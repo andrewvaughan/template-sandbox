@@ -1,6 +1,8 @@
 /**
  * Logger.
  *
+ * TODO - Move this to use the built-in `core` object logging methods
+ *
  * @classdesc
  * Provides static methods for easily logging to GitHub Actions with support for advanced logging capabilities, such as
  * debug logging, grouping logs, and annotations.
@@ -12,7 +14,7 @@
  *
  * @class
  */
-class Logger {
+module.exports = class Logger {
   /**
    * ANSI terminal codes for various formatting.
    *
@@ -183,6 +185,20 @@ class Logger {
    */
   debug(message) {
     this._log(message, "DEBUG", "::debug::", Logger.ANSI.BOLD + Logger.ANSI.FG.YELLOW);
+  }
+
+  /**
+   * Log a verbose debug message.
+   *
+   * Right now, this simply ignores the output. This function is here to allow objects to place verbose logs in until a
+   * better solution is found to display them.
+   *
+   * @param {*} message - the message or object to log
+   *
+   * @public
+   */
+  verbose(message) {
+    // Do nothing
   }
 
   /**
@@ -498,22 +514,3 @@ class Logger {
     }
   }
 }
-
-/**
- * Configure the Logger to also allow for messages statically.
- */
-const staticLogger = new Logger();
-
-Logger.debug = staticLogger.debug;
-Logger.info = staticLogger.info;
-Logger.notice = staticLogger.notice;
-Logger.warning = staticLogger.warning;
-Logger.error = staticLogger.error;
-
-Logger.startGroup = staticLogger.startGroup;
-Logger.endGroup = staticLogger.endGroup;
-Logger.endAllGroups = staticLogger.endAllGroups;
-
-Logger.mask = staticLogger.mask;
-
-module.exports = Logger;
