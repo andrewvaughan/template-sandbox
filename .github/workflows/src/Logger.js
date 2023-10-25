@@ -464,6 +464,22 @@ module.exports = class Logger {
   }
 
   /**
+   * Reduces multiple whitespace characters in a string, including tabs, but not newlines, into a single space.
+   *
+   * This is useful for creating large messages and strings formatted in mutiple, indented lines for code, but that
+   * need to have that indentation whitespace removed when used.
+   *
+   * @param {string} message - the message to reduce whitespace from
+   *
+   * @returns {string} the shrunk message
+   *
+   * @public
+   */
+  shrinkWhitespace(message) {
+    return message.replace(/\s\s/g, " ").replace(/\n\s/g, "\n");
+  }
+
+  /**
    * Start a collapsable group with an optional title.
    *
    * The Logger doesn't automatically track group opening and closing. It's up to the developer to call `endGroup` for
