@@ -17,7 +17,6 @@ const Logger = require("../Logger");
  * @class
  */
 module.exports = class Issue {
-
   /**
    * The Issue number.
    *
@@ -99,11 +98,13 @@ module.exports = class Issue {
   constructor(number, repository = undefined, owner = undefined) {
     this._logger = new Logger("Issue");
 
-    this._logger.debug("Issue.constructor(" +
-      `number: ${JSON.stringify(number)}, ` +
-      `repository: ${JSON.stringify(repository)}, ` +
-      `owner: ${JSON.stringify(owner)}` +
-    ")");
+    this._logger.debug(
+      "Issue.constructor(" +
+        `number: ${JSON.stringify(number)}, ` +
+        `repository: ${JSON.stringify(repository)}, ` +
+        `owner: ${JSON.stringify(owner)}` +
+        ")",
+    );
 
     this.number = number;
     this.repository = repository ? repository : ActionContext.context.repo.repo;
@@ -130,9 +131,7 @@ module.exports = class Issue {
    * @async
    */
   async _load(force = false) {
-    this._logger.debug("Issue._load(" +
-      `force: ${JSON.stringify(force)}` +
-    ")");
+    this._logger.debug("Issue._load(" + `force: ${JSON.stringify(force)}` + ")");
 
     if (this._issue && !force) {
       this._logger.debug("Load cache hit.");
@@ -144,26 +143,26 @@ module.exports = class Issue {
     this._logger.info(`Loading Issue #${this.number} data from GitHub...`);
     this._logger.debug("Calling GitHub get Issue API via REST...");
 
-    return ActionContext.github.rest.issues.get({
-      owner: this.owner,
-      repo: this.repository,
-      issue_number: this.number,
+    return ActionContext.github.rest.issues
+      .get({
+        owner: this.owner,
+        repo: this.repository,
+        issue_number: this.number,
+      })
+      .then((response) => {
+        this._logger.debug(`Response status: ${response.status}`);
 
-    }).then((response) => {
-      this._logger.debug(`Response status: ${response.status}`);
+        if (response.status < 200 || response.status > 299) {
+          this._logger.debug(response);
+          throw ReferenceError(`Unable to load Issue #${this.number}.`);
+        }
 
-      if (response.status < 200 || response.status > 299) {
-        this._logger.debug(response);
-        throw ReferenceError(`Unable to load Issue #${this.number}.`);
-      }
+        this._issue = response.data;
 
-      this._issue = response.data;
-
-      this._logger.debug("Issue data loaded.");
-      this._logger.verbose(this._issue);
-    });
+        this._logger.debug("Issue data loaded.");
+        this._logger.verbose(this._issue);
+      });
   }
-
 
   /**
    * Force a reload of the Issue data.
@@ -176,7 +175,6 @@ module.exports = class Issue {
   async reload() {
     return this._load(true);
   }
-
 
   /**
    * If not explicitly set in this Object, attempts to look up the value in the Issue data.
@@ -191,19 +189,16 @@ module.exports = class Issue {
    * @public
    * @async
    */
-  get (target, prop) {
+  get(target, prop) {
     if (this[prop]) {
       return this[prop];
     }
 
-    this._logger.debug("Issue.GET(" +
-      `target: ..., ` +
-      `prop: ${JSON.stringify(prop)}` +
-    ")");
+    this._logger.debug("Issue.GET(" + `target: ..., ` + `prop: ${JSON.stringify(prop)}` + ")");
 
     // Javascript doesn't support await/async on getters. This mess gets around that.
     return (async () => {
-      await this._load()
+      await this._load();
 
       if (!this._issue || !prop in Object.keys(this._issue)) {
         throw new ReferenceError(`Property '${prop}' does not exist in object or Issue data.`);
@@ -213,6 +208,7 @@ module.exports = class Issue {
     })();
   }
 
+  // LABELS ------------------------------------------------------------------------------------------------------------
 
   /**
    * Add one or more Labels to the configured Issue.
@@ -223,36 +219,34 @@ module.exports = class Issue {
    *
    * @returns {Promise}
    *
+   * @public
    * @async
    */
   async addLabels(labels) {
-    this._logger.debug("Issue.addLabels(" +
-      `labels: ${JSON.stringify(labels)}` +
-    ")");
+    this._logger.debug("Issue.addLabels(" + `labels: ${JSON.stringify(labels)}` + ")");
 
     this._logger.info(`Adding Labels '${JSON.stringify(labels)}' to Issue #${this.number}.`);
 
-    if (typeof(labels) === 'string') {
+    if (typeof labels === "string") {
       labels = [labels];
     }
 
     this._logger.debug("Calling GitHub add Labels API via REST...");
 
-    return ActionContext.github.rest.issues.addLabels({
-      owner: this.owner,
-      repo: this.repository,
-      issue_number: this.number,
-      labels: labels
+    return ActionContext.github.rest.issues
+      .addLabels({
+        owner: this.owner,
+        repo: this.repository,
+        issue_number: this.number,
+        labels: labels,
+      })
+      .then((response) => {
+        this._logger.debug("Labels added.");
+        this._logger.verbose(response);
 
-    }).then((response) => {
-      this._logger.debug("Labels added.");
-      this._logger.verbose(response);
-
-      this._logger.debug("Clearing Issue data cache...");
-      delete this._issue;
-
-      resolve();
-    });
+        this._logger.debug("Clearing Issue data cache...");
+        delete this._issue;
+      });
   }
 
   /**
@@ -264,16 +258,15 @@ module.exports = class Issue {
    *
    * @returns {Promise}
    *
+   * @public
    * @async
    */
   async removeLabels(labels) {
-    this._logger.debug("Issue.removeLabels(" +
-      `labels: ${JSON.stringify(labels)}` +
-    ")");
+    this._logger.debug("Issue.removeLabels(" + `labels: ${JSON.stringify(labels)}` + ")");
 
     this._logger.info(`Removing Labels '${JSON.stringify(labels)}' from Issue #${this.number}.`);
 
-    if (typeof(labels) === 'string') {
+    if (typeof labels === "string") {
       labels = [labels];
     }
 
@@ -282,76 +275,108 @@ module.exports = class Issue {
     let promises = [];
 
     labels.forEach((label) => {
-
       promises.push(
-        ActionContext.github.rest.issues.removeLabel({
-          owner: this.owner,
-          repo: this.repository,
-          issue_number: this.number,
-          name: label
-
-        }).then((response) => {
-          this._logger.debug(`Label removed: ${label}`);
-          this._logger.verbose(response);
-        })
+        ActionContext.github.rest.issues
+          .removeLabel({
+            owner: this.owner,
+            repo: this.repository,
+            issue_number: this.number,
+            name: label,
+          })
+          .then((response) => {
+            this._logger.debug(`Label removed: ${label}`);
+            this._logger.verbose(response);
+          }),
       );
-
     });
 
-    return Promise
-      .all(promises)
-      .finally(() => {
-        this._logger.debug("Clearing Issue data cache...");
-        delete this._issue;
+    return Promise.all(promises).finally(() => {
+      this._logger.debug("Clearing Issue data cache...");
+      delete this._issue;
+    });
+  }
+
+  // COMMENTS ----------------------------------------------------------------------------------------------------------
+
+  /**
+   * Adds a comment to the Issue.
+   *
+   * @param {string} message - the message to include in the comment
+   *
+   * @returns {Promise}
+   *
+   * @async
+   * @public
+   */
+  async addComment(message) {
+    this._logger.debug("Issue.addComment(...)");
+    this._logger.verbose(`message: ${JSON.stringify(message)}`);
+
+    this._logger.info(`Adding comment to Issue #${this.number}`);
+
+    return ActionContext.github.rest.issues
+      .createComment({
+        issue_number: this.number,
+        owner: this.owner,
+        repo: this.repository,
+        body: message,
+      })
+      .then((response) => {
+        this._logger.debug("Comment added.");
+        this._logger.verbose(response);
       });
   }
 
+  /**
+   * Adds a notice-formatted comment to the Issue.
+   *
+   *
+   * @param {string} message - the message to include in the comment
+   *
+   * @returns {Promise}
+   *
+   * @async
+   * @public
+   */
+  async addNotice(message) {
+    this._logger.debug("Issue.addNotice(" + `message: ${JSON.stringify(message)}` + ")");
 
+    return this.addComment(`## :thought_balloon: Notice\n\n${message}`);
+  }
 
+  /**
+   * Adds a warning-formatted comment to the Issue.
+   *
+   *
+   * @param {string} message - the message to include in the comment
+   *
+   * @returns {Promise}
+   *
+   * @async
+   * @public
+   */
+  async addWarning(message) {
+    this._logger.debug("Issue.addWarning(" + `message: ${JSON.stringify(message)}` + ")");
 
+    return this.addComment(`## :warning: Warning\n\n${message}`);
+  }
 
+  /**
+   * Adds an error-formatted comment to the Issue.
+   *
+   *
+   * @param {string} message - the message to include in the comment
+   *
+   * @returns {Promise}
+   *
+   * @async
+   * @public
+   */
+  async addError(message) {
+    this._logger.debug("Issue.addError(" + `message: ${JSON.stringify(message)}` + ")");
 
-
-
-  // addComment(message, user = undefined) {
-  //   this._logger.debug("Issue.addComment(" +
-  //     `message: ${JSON.stringify(message)},` +
-  //     `user: ${JSON.stringify(user)}` +
-  //   ")");
-
-  //   // TODO
-  //   throw Error("Not Implemented.");
-  // }
-
-  // addNotice(message, user = undefined) {
-  //   this._logger.debug("Issue.addNotice(" +
-  //     `message: ${JSON.stringify(message)},` +
-  //     `user: ${JSON.stringify(user)}` +
-  //   ")");
-
-  //   // TODO
-  //   throw Error("Not Implemented.");
-  // }
-
-  // addWarning(message, user = undefined) {
-  //   this._logger.debug("Issue.addWarning(" +
-  //     `message: ${JSON.stringify(message)},` +
-  //     `user: ${JSON.stringify(user)}` +
-  //   ")");
-
-  //   // TODO
-  //   throw Error("Not Implemented.");
-  // }
-
-  // addError(message, user = undefined) {
-  //   this._logger.debug("Issue.addError(" +
-  //     `message: ${JSON.stringify(message)},` +
-  //     `user: ${JSON.stringify(user)}` +
-  //   ")");
-
-  //   // TODO
-  //   throw Error("Not Implemented.");
-  // }
+    return this.addComment(`## :rotating_light: Error\n\n${message}`);
+  }
 
   // getProjectController(force = false) {
   //   this._logger.debug("Issue.getProjectController(" +
@@ -388,5 +413,4 @@ module.exports = class Issue {
   //   // TODO
   //   throw Error("Not Implemented.");
   // }
-
 };

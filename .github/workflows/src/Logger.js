@@ -513,4 +513,4 @@ module.exports = class Logger {
       this.endGroup();
     }
   }
-}
+};
