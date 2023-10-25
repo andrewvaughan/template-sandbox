@@ -16,31 +16,23 @@ const Logger = require("../Logger");
  * @class
  */
 module.exports = class OnIssues {
-  /**
-   * Creates a handler to manage GitHub `issues` events.
-   *
-   * @public
-   * @constructor
-   */
-  constructor() {
-    this._logger = new Logger("OnIssues");
-
-    this._logger.debug("OnIssues.constructor()");
-  }
 
   /**
    * Handles the user assigned event for Issues.
    *
    * @public
+   * @static
    * @async
    */
-  async handleUserAssigned() {
-    this._logger.debug("OnIssues.handleUserAssigned()");
+  static async handleUserAssigned() {
+    const logger = new Logger("OnIssues.handleUserAssigned");
+
+    logger.debug("OnIssues.handleUserAssigned()");
 
     const issue = new Issue(ActionContext.context.issue.number);
 
     // Remove the `Help Wanted` Label
-    this._logger.startGroup(`Removing 'Help Wanted' Label from Issue #${issue.number}`);
+    logger.startGroup(`Removing 'Help Wanted' Label from Issue #${issue.number}`);
 
     let labels = await issue.labels;
 
@@ -50,10 +42,10 @@ module.exports = class OnIssues {
       }
     });
 
-    this._logger.endGroup();
+    logger.endGroup();
 
     // If the `Needs Triage` Label is still on the Issue, comment a warning
-    this._logger.startGroup(`Checking for 'Needs Triage' Label on Issue #${issue.number}`);
+    logger.startGroup(`Checking for 'Needs Triage' Label on Issue #${issue.number}`);
 
     let found = false;
 
@@ -61,7 +53,7 @@ module.exports = class OnIssues {
       if (label["name"].toLowerCase() == "needs triage") {
         found = true;
 
-        this._logger.warning(
+        logger.warning(
           "Assigning non-triaged issues can be indicative of not following the defined Software Development " +
             "Lifecycle. A warning will be added to the Issue explaining the risk.",
           `Label 'Needs Triage' found on Issue #${issue.number} during user assignment`,
@@ -78,13 +70,13 @@ module.exports = class OnIssues {
     });
 
     if (!found) {
-      this._logger.notice(
+      logger.notice(
         "Label 'Needs Triage' did not exist on issue during user assignment. This is expected.",
         `Label 'Needs Triage' expectedly missing from Issue #${issue.number}`,
       );
     }
 
-    this._logger.endGroup();
+    logger.endGroup();
 
     // // If the Issue's Project status isn't set, `Done`, or `Parking Lot`, comment a warning
     // this._logger.startGroup(`Checking for valid status on Issue #${issueNumber}`);

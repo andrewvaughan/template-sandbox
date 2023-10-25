@@ -78,7 +78,5 @@ jobs:
               github, context, core, glob, io, exec, fetch
             );
 
-            const OnIssues = require(".github/workflows/src/Automation/OnIssues");
-            const action = new OnIssues();
-
-            action.handleUserAssigned();
+            require(".github/workflows/src/Automation/OnIssues")
+              .handleUserAssigned();
