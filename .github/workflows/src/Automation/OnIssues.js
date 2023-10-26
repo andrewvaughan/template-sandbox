@@ -1,6 +1,7 @@
 const ActionContext = require("../ActionContext");
 const Issue = require("../GitHub/Issue");
-const Logger = require("../Logger");
+const Label = require("../GitHub/Label");
+const WorkflowAbstract = require("../WorkflowAbstract");
 
 /**
  * OnIssues.
@@ -13,44 +14,34 @@ const Logger = require("../Logger");
  * @author Andrew Vaughan <hello@andrewvaughan.io>
  * @license MIT
  *
- * @class
+ * @class @extends WorkflowAbstract
  */
-module.exports = class OnIssues {
+module.exports = class OnIssues extends WorkflowAbstract {
   /**
    * Handles the user assigned event for Issues.
    *
-   * @public
-   * @static
-   * @async
+   * @public @async
    */
-  static async handleUserAssigned() {
-    const logger = new Logger("OnIssues.handleUserAssigned");
-
-    logger.debug("OnIssues.handleUserAssigned()");
+  async handleUserAssigned() {
+    this._debugCall("handleUserAssigned", arguments);
 
     const issue = new Issue(ActionContext.context.issue.number);
 
-    logger.debug(`foobar: ${Issue.has("foobar")}`);
-    logger.debug(`number: ${Issue.has("number")}`);
-    logger.debug(`body: ${Issue.has("body")}`);
-    logger.debug(`bodyHTML: ${Issue.has("bodyHTML")}`);
-    logger.debug(`reactionGroups: ${Issue.has("reactionGroups")}`);
-    logger.debug(`timelineItems: ${Issue.has("timelineItems")}`);
+    // Remove the `Help Wanted` Label
+    this._logger.startGroup(
+      "Removing 'Help Wanted' Label from Issue " +
+      `${ActionContext.context.repo.owner}/${ActionContext.context.repo.repo}#${issue.number}`
+    );
 
-    //await issue.reload();
-
-    // // Remove the `Help Wanted` Label
-    // logger.startGroup(`Removing 'Help Wanted' Label from Issue #${issue.number}`);
-
-    // let labels = await issue.labels;
+    console.log(await issue.labels);
 
     // await labels.forEach(async (label) => {
-    //   if (label["name"].toLowerCase() == "help wanted") {
-    //     await issue.removeLabels(label["name"]);
+    //   if (label.name.toLowerCase() == "help wanted") {
+    //     return await issue.removeLabels(label);
     //   }
     // });
 
-    // logger.endGroup();
+    this._logger.endGroup();
 
     // // If the `Needs Triage` Label is still on the Issue, comment a warning
     // logger.startGroup(`Checking for 'Needs Triage' Label on Issue #${issue.number}`);
