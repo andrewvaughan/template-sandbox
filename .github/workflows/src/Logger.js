@@ -1,3 +1,5 @@
+const ActionContext = require("./ActionContext");
+
 /**
  * Logger.
  *
@@ -81,6 +83,21 @@ module.exports = class Logger {
   };
 
   /**
+   * Levels of verbosity for debug logging.
+   *
+   * @type {Object.<string, int>}
+   *
+   * @public
+   * @constant
+   * @static
+   */
+  static LEVEL = {
+    DEFAULT: 0,
+    DEBUG: 1,
+    VERBOSE: 2,
+  };
+
+  /**
    * The logging group levels currently opened.
    *
    * @type {int}
@@ -88,6 +105,17 @@ module.exports = class Logger {
    * @protected
    */
   _groupLevel = 0;
+
+  /**
+   * The debug level for the GitHub runner.
+   *
+   * Set during first-access by the getter, below.
+   *
+   * @type {int}
+   *
+   * @protected
+   */
+  _debugLevel;
 
   /**
    * The name of this logger.
@@ -136,6 +164,67 @@ module.exports = class Logger {
     this.timezone = timezone;
   }
 
+  /**
+   * The current debug level configured for the environment.
+   *
+   * Levels are:
+   *
+   *  - `0` - No debugging enabled
+   *  - `1` - Standard debugging enabled
+   *  - `2` - Verbose debugging enabled
+   *
+   * The configured secrets, variables, or environment variables determine the debug level set.
+   *
+   * To enable debug logging, even if running locally, set either, or both, of the `ACTIONS_RUNNER_DEBUG` or
+   * `ACTIONS_STEP_DEBUG` GitHub variables or environment variables to `true`.
+   *
+   * @see {@link https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/enabling-debug-logging}
+   *
+   * Additionally, to enable verbose logging, you must also set the `ACTIONS_DEBUG_VERBOSE` GitHub variable or
+   * environment variable to `true`. Enabling verbose debugging without setting normal debugging has no effect.
+   *
+   * @see {@link https://docs.github.com/en/actions/learn-github-actions/variables}
+   *
+   * While GitHub allows developers to enable debugging via GitHub Secrets, this Logger utility doesn't, as scripts
+   * don't have access to secrets, by default, for security purposes. To mimic this capability, set your secret as an
+   * environment variable simlar to:
+   *
+   * ```yml
+   * - name: Verbose via secret
+   *   uses: actions/github-script@v6
+   *   env:
+   *     ACTIONS_RUNNER_DEBUG: ${{ secrets.ACTIONS_RUNNER_DEBUG }}
+   *   with:
+   *     (new Logger("example")).debug("Hello World");
+   * ```
+   *
+   * @type {int}
+   * @public
+   */
+  get debugLevel() {
+    if (typeof this._debugLevel === "undefined") {
+      // By default, set the debug level to nothing
+      this._debugLevel = Logger.LEVEL.DEFAULT;
+
+      // Check for the enablement of GitHub Actions, first
+      if (
+        ("ACTIONS_RUNNER_DEBUG" in process.env && process.env.ACTIONS_RUNNER_DEBUG) ||
+        ("ACTIONS_STEP_DEBUG" in process.env && process.env.ACTIONS_STEP_DEBUG)
+      ) {
+        this._debugLevel = Logger.LEVEL.DEBUG;
+      }
+
+      // If the user has enabled GitHub Actions debugging, see if they have set verbose debugging, too
+      if (this._debugLevel > 0) {
+        if ("ACTIONS_DEBUG_VERBOSE" in process.env && process.env.ACTIONS_DEBUG_VERBOSE) {
+          this._debugLevel = Logger.LEVEL.VERBOSE;
+        }
+      }
+    }
+
+    return this._debugLevel;
+  }
+
   // Logging -----------------------------------------------------------------------------------------------------------
 
   /**
@@ -145,9 +234,9 @@ module.exports = class Logger {
    *
    * @param {*} message - the message to output
    * @param {string} level - the name of the logging level
-   * @param {string} workflowCommand - the GitHub Workflow command to prepend to the message
-   * @param {boolean} doWrap - whether to enable string wrapping (default: true)
-   * @param {string} levelANSI - the ANSI formatting codes for the level name (default: `Logger.ANSI.BOLD`)
+   * @param {string} [workflowCommand=""] - the GitHub Workflow command to prepend to the message
+   * @param {boolean} [doWrap=true] - whether to enable string wrapping
+   * @param {string} [levelANSI=Logger.ANSI.BOLD] - the ANSI formatting codes for the level name
    *
    * @protected
    */
@@ -173,32 +262,33 @@ module.exports = class Logger {
   /**
    * Log a debug message.
    *
-   * This function performs no debug hiding logic. The GitHub Workflow runner manages all debug display through
-   * filtering the workflow command sent with the message.
-   *
+   * @see Logger.debugLevel
    * @see {@link https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-a-debug-message}
-   * @see {@link https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/enabling-debug-logging}
    *
    * @param {*} message - the message or object to log
    *
    * @public
    */
   debug(message) {
-    this._log(message, "DEBUG", "::debug::", Logger.ANSI.BOLD + Logger.ANSI.FG.YELLOW);
+    if (this.debugLevel >= 1) {
+      this._log(message, "DEBUG", "::debug::", Logger.ANSI.BOLD + Logger.ANSI.FG.YELLOW);
+    }
   }
 
   /**
    * Log a verbose debug message.
    *
-   * Right now, this simply ignores the output. This function is here to allow objects to place verbose logs in until a
-   * better solution is found to display them.
+   * @see Logger.debugLevel
+   * @see {@link https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-a-debug-message}
    *
    * @param {*} message - the message or object to log
    *
    * @public
    */
   verbose(message) {
-    // Do nothing
+    if (this.debugLevel >= 2) {
+      this._log(message, "VERBOSE", "::debug::", Logger.ANSI.ITALIC + Logger.ANSI.DIM + Logger.ANSI.FG.YELLOW);
+    }
   }
 
   /**

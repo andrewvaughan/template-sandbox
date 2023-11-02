@@ -22,50 +22,38 @@ module.exports = class Label extends GraphQLAbstract {
   /**
    * @inheritdoc
    */
-  static _primitiveFields = [
-    "color",
-    "createdAt",
-    "description",
-    "isDefault",
-    "name",
-    "resourcePath",
-    "updatedAt",
-    "url",
-  ];
-
-  /**
-   * @inheritdoc
-   */
-  static _manyToOneFields = {
-    // repository: Repository,
-  };
-
-  /**
-   * @inheritdoc
-   */
-  static _manyToManyFields = {
-    issues: Issue,
+  static _fields = {
+    color: String,
+    createdAt: Date.parse,
+    description: String,
+    isDefault: Boolean,
+    // issues: Issue,   // Circular references (issue -> labels -> issues -> labels) breaks JS
+    name: String,
     // pullRequests: PullRequest,
+    // repository: Repository,
+    resourcePath: String,
+    updatedAt: Date.parse,
+    url: String,
   };
 
   /**
    * The Label name.
    *
-   * @public @readonly @type {string}
+   * @public @readonly @type {String}
    */
   name;
 
   /**
    * The Repository name containing the Label.
    *
-   * @public @readonly @type {string}
+   * @public @readonly @type {String}
    */
   repository;
 
   /**
    * The Owner name for the Repository.
    *
-   * @public @readonly @type {string}
+   * @public @readonly @type {String}
    */
   owner;
 
@@ -74,11 +62,11 @@ module.exports = class Label extends GraphQLAbstract {
    *
    * This doesn't load Label data from GitHub, as that's lazy-loaded when data is first accessed.
    *
-   * @param {int} name - the Issue name to load
-   * @param {string} [repository=context.repo.repo] - the Repository the Issue is part of
-   * @param {string} [owner=context.repo.owner] - the owner of the Repository
+   * @param {String} name - the Label name to load
+   * @param {String} [repository=context.repo.repo] - the Repository the Issue is part of
+   * @param {String} [owner=context.repo.owner] - the owner of the Repository
    *
-   * @returns {Proxy}
+   * @returns {Proxy} of this object to allow for enhanced getters and setters
    *
    * @override @public @constructor
    */
@@ -91,9 +79,7 @@ module.exports = class Label extends GraphQLAbstract {
     this.repository = repository ? repository : ActionContext.context.repo.repo;
     this.owner = owner ? owner : ActionContext.context.repo.owner;
 
-    this._logger.debug(`Label.name == ${this.name}`);
-    this._logger.debug(`Label.repository == ${this.repository}`);
-    this._logger.debug(`Label.owner == ${this.owner}`);
+    this._logger.debug(`New Label(name: ${this.name}, repository: ${this.repository}, owner: ${this.owner})`);
 
     // Allows this to override all getters that aren't explicitly set.
     return new Proxy(this, this);
@@ -102,69 +88,142 @@ module.exports = class Label extends GraphQLAbstract {
   /**
    * @inheritdoc
    */
-  async _loadPrimitives(force = false) {
-    this._debugCall("_loadPrimitives", arguments);
+  static async create(caller, pageSize = GraphQLAbstract._PAGE_SIZE) {
+    const logger = new Logger(`[C]${this.name}`);
 
-    if (this._cache["name"] && !force) {
-      this._logger.debug("Load cache hit.");
-      return;
+    this._debugStaticCall(this.name, "create", { caller: caller.constructor.name, pageSize: pageSize }, false, logger);
+
+    logger.verbose("Calling instance:");
+    logger.verbose(caller);
+
+    switch (caller.constructor.name) {
+      /**
+       * Issue
+       */
+      case "Issue":
+        return ActionContext.github
+          .graphql(
+            `query GetLabelsByIssue($owner: String!, $repository: String!, $issueNumber: Int!, $pageSize: Int!) {
+                repository(owner: $owner, name: $repository) {
+                  issue(number: $issueNumber) {
+                    labels (first: $pageSize) {
+                      totalCount,
+                      nodes {
+                        ${this._getPrimitiveFields().join(" ")}
+                      }
+                    }
+                  }
+                }
+              }`,
+            {
+              owner: caller.owner,
+              repository: caller.repository,
+              issueNumber: caller.number,
+              pageSize: pageSize,
+            },
+          )
+          .then((response) => {
+            logger.debug("API response received.");
+
+            logger.verbose("Full response:");
+            logger.verbose(response);
+
+            const labels = response.repository.issue.labels;
+
+            if (!labels) {
+              logger.debug(`No Labels found for Issue #${caller.number}.`);
+              return [];
+            }
+
+            const count = labels.totalCount;
+            logger.debug(`${count} Label(s) found for Issue #${caller.number} (capped at ${pageSize}).`);
+
+            // TODO Pagination
+
+            logger.verbose("Building Label set...");
+            let promises = [];
+
+            labels.nodes.forEach(async (data) => {
+              // Add data to the dataset that won't be available up front
+              data["owner"] = caller.owner;
+              data["repository"] = caller.repository; // TODO - Transition to proper Repository object lookup
+
+              promises.push(Label._build(data));
+            });
+
+            logger.verbose("Label set build completed.");
+
+            // Wait for all of the Label builds to complete
+            return Promise
+              .all(promises)
+              .then((labelSet) => {
+                return labelSet;
+              });
+          });
     }
 
-    this._logger.debug("Load cache miss.");
-
-    this._logger.info(
-      `Loading ${this.owner}/${this.repository} Label '${this.name}' data from GitHub...`
+    throw new NotImplementedError(
+      `The \`${this.name}.create\` method does not support calling from \`${caller.constructor.name}\`.`,
     );
+  }
 
-    this._logger.debug("Calling GitHub GraphQL API...");
+  /**
+   * @inheritdoc
+   */
+  static async _build(data, ignoreAdditional = true) {
+    const logger = new Logger(`[C]${this.name}`);
 
-    return ActionContext.github
-      .graphql(
-        `query GetLabelDataByName($owner: String!, $repo: String!, $labelName: String!) {
-          repository(owner: $owner, name: $repo, followRenames: true) {
-            label(name: $labelName) {
-              ${this.constructor._primitiveFields.join("\n")}
-            }
+    this._debugStaticCall(this.name, "_build", { data: "...", ignoreAdditional: ignoreAdditional }, false, logger);
+
+    logger.verbose("API data:");
+    logger.verbose(data);
+
+    ["owner", "repository", "name"].every((key) => {
+      if (!key in data) {
+        throw new ReferenceError(`Missing required ${this.name} field: \`${key}\``);
+      }
+    });
+
+    const label = new Label(data["name"], data["repository"], data["owner"]);
+
+    for (const [key, val] of Object.entries(data)) {
+      if (!ignoreAdditional && !(key in this._fields)) {
+        throw new ReferenceError(`Unexpected field in Label data: \`${key}\``);
+      }
+
+      // Set directly on the cache to not trigger a GitHub update on the setter
+      label._cache[key] = val;
+    }
+
+    return label;
+  }
+
+  /**
+   * @inheritdoc
+   */
+  _getGraphQLQuery() {
+    this._debugCall("_getGraphQLQuery", arguments);
+
+    // Limit the fields to only primitives
+    let fields = this.constructor._getPrimitiveFields();
+
+    const query = `
+      query GetLabelByName($owner: String!, $repository: String!, $labelName: String!) {
+        repository(owner: $owner, name: $repo, followRenames: true) {
+          label(name: $labelName) {
+            ${this.constructor._getPrimitiveFields().join(" ")}
           }
-        }`,
-        {
-          owner: this.owner,
-          repo: this.repository,
-          labelName: this.name,
-        },
-      )
-      .then((response) => {
-        this._logger.debug("GraphQL API call successful.");
-        this._logger.verbose(response);
+        }
+      }`;
 
-        Object.entries(response["repository"]["label"]).forEach((entry) => {
-          const [key, value] = entry;
-          this._cache[key] = value;
-        });
-      });
-  }
+    const map = {
+      owner: this.owner,
+      repository: this.repository,
+      labelName: this.name,
+    };
 
-  // Static Generators -------------------------------------------------------------------------------------------------
+    const container = ["repository", "label"];
 
-  /**
-   * @inheritdoc
-   */
-  static async generate(caller, args = {}) {
-    const logger = new Logger("[C]Label");
-
-    Label._debugStaticCall("generate", args, false, logger);
-
-    throw new NotImplementedError();
-  }
-
-  /**
-   * @inheritdoc
-   */
-  static async generateSet(caller, perPage = 20, after = undefined, args = {}) {
-    const logger = new Logger("[C]Label");
-
-    Label._debugStaticCall("generateSet", args, false, logger);
-
-    throw new NotImplementedError();
+    return [query, map, container];
   }
 };

@@ -14,6 +14,22 @@
 # This *does* make changes on GitHub. Reserve Issue #1 and Pull Request #1 for testing purposes. To change this
 # configuration, see the `.github/workflows/tests/payloads` directory.
 #
+# To see debug messages:
+#
+# ```sh
+# act -s GITHUB_TOKEN=$(gh auth token) --env ACTIONS_RUNNER_DEBUG=true -j auto-issue-assign-user issues
+# ```
+#
+# To see all verbose debug messages:
+#
+# ```sh
+# act \
+#   -s GITHUB_TOKEN=$(gh auth token) \
+#   --env ACTIONS_RUNNER_DEBUG=true \
+#   --env ACTIONS_RUNNER_DEBUG_VERBOSE=true \
+#   -j auto-issue-assign-user issues
+# ```
+#
 # @see {@link https://docs.github.com/en/webhooks/webhook-events-and-payloads#issues}
 #
 ---

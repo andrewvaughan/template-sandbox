@@ -26,9 +26,9 @@ module.exports = class WorkflowAbstract {
   /**
    * Print a standard debug message describing the method called.
    *
-   * @param {string} func - the name of the function, not including the class
+   * @param {String} func - the name of the function, not including the class
    * @param {Object} args - the `arguments` variable provided to each function
-   * @param {boolean} [verbose=false] - whether to debug this as a verbose message
+   * @param {Boolean} [verbose=false] - whether to debug this as a verbose message
    *
    * @protected
    */
@@ -39,17 +39,17 @@ module.exports = class WorkflowAbstract {
   /**
    * Print a standard debug message describing the static method called.
    *
-   * @param {string} cls - the name of the class calling the function
-   * @param {string} func - the name of the function, not including the class
+   * @param {String} cls - the name of the class calling the function
+   * @param {String} func - the name of the function, not including the class
    * @param {Object} args - the `arguments` variable provided to each function
-   * @param {boolean} [verbose=false] - whether to debug this as a verbose message
+   * @param {Boolean} [verbose=false] - whether to debug this as a verbose message
    * @param {Logger} [logger=undefined] - the logger to use when logging, defaults to a WorkflowAbstract logger
    *
    * @protected @static
    */
   static _debugStaticCall(cls, func, args, verbose = false, logger = undefined) {
     if (!logger) {
-      logger = new Logger("WorkflowAbstract");
+      logger = new Logger(`[C]${cls}`);
     }
 
     const cleanArgs = Object.keys(args)

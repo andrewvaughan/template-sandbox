@@ -78,6 +78,8 @@ MegaLinter
 Milestone
 Milestones
 MIT
+Organization
+Organizations
 Pending Initiation
 Pending Staging
 Project Licenses
