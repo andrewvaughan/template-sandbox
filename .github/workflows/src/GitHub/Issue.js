@@ -1,7 +1,10 @@
 const ActionContext = require("../ActionContext");
 const NotImplementedError = require("../Errors/NotImplementedError");
+const Logger = require("../Logger");
 const GraphQLAbstract = require("./GraphQLAbstract");
 const Label = require("./Label");
+
+const crypto = require("crypto");
 
 /**
  * Issue.
@@ -40,6 +43,7 @@ module.exports = class Issue extends GraphQLAbstract {
     // editor: Actor,
     fullDatabaseId: Number,
     // hovercard: Hovercard,   // Requires additional, non-standard parameters to function
+    id: String,
     includesCreatedEdit: Boolean,
     isPinned: Boolean,
     isReadByViewer: Boolean,
@@ -77,7 +81,7 @@ module.exports = class Issue extends GraphQLAbstract {
     viewerCanReopen: Boolean,
     viewerCanSubscribe: Boolean,
     viewerCanUpdate: Boolean,
-    // viewerCannotUpdateReasons,   // TODO returns an array, need to handle
+    // viewerCannotUpdateReasons,   // TODO returns an array of strings (enums), need to handle
     viewerDidAuthor: Boolean,
     viewerSubscription: String,
     viewerThreadSubscriptionFormAction: String,
@@ -127,6 +131,8 @@ module.exports = class Issue extends GraphQLAbstract {
     this.repository = repository ? repository : ActionContext.context.repo.repo;
     this.owner = owner ? owner : ActionContext.context.repo.owner;
 
+    this._logger = new Logger(`Issue(${this.repository}#${number})`);
+
     this._logger.debug(`New Issue(number: ${this.number}, repository: ${this.repository}, owner: ${this.owner})`);
 
     // Allows this to override all getters that aren't explicitly set.
@@ -166,6 +172,128 @@ module.exports = class Issue extends GraphQLAbstract {
     const container = ["repository", "issue"];
 
     return [query, map, container];
+  }
+
+  // Labels ------------------------------------------------------------------------------------------------------------
+
+  /**
+   * Add one or more Labels to the Issue.
+   *
+   * @param {String|String[]|Label|Label[]} labels - one or more Labels or label names to add to the Issue
+   *
+   * @throws {TypeError} upon encountering an unexpected object type
+   *
+   * @public @async
+   */
+  async addLabels(labels) {
+    this._debugCall("addLabels", arguments);
+
+    if (!Array.isArray(labels)) {
+      labels = [labels];
+    }
+
+    this._logger.verbose("Parsing label names...");
+
+    let promises = [];
+
+    labels.forEach(async (label) => {
+      if (typeof label === "string") {
+        label = new Label(label, this.repository, this.owner);
+      }
+
+      if (!(label instanceof Label)) {
+        throw new TypeError(`Unexpected Label type encountered: \`${label.constructor.name}\``);
+      }
+
+      promises.push(label.id);
+    });
+
+    const issueID = await this.id;
+
+    // Wait for all the Issue IDs to fetch
+    return Promise
+      .all(promises)
+      .then((labelIDs) => {
+        this._logger.debug(`Calling GitHub GraphQL API to add Labels to Issue #${this.number}...`);
+        this._logger.verbose(`Label IDs: ${labelIDs.join(", ")}`)
+
+        return ActionContext.github.graphql(
+          `mutation AddLabelsToIssue($clientID: String!, $labelIDs: [ID!]!, $issueID: ID!) {
+            addLabelsToLabelable(input: {
+              clientMutationId: $clientID,
+              labelIds: $labelIDs,
+              labelableId: $issueID
+            }) {
+              clientMutationId
+            }
+          }`,
+          {
+            clientID: crypto.randomUUID(),
+            labelIDs: labelIDs,
+            issueID: issueID,
+          }
+        );
+      });
+  }
+
+  /**
+   * Remove one or more Labels from the Issue.
+   *
+   * Labels must exist in the Issue's Repository to succeed without failure.
+   *
+   * @param {String|String[]|Label|Label[]} labels - one or more Labels or label names to remove from the Issue
+   *
+   * @public @async
+   */
+  async removeLabels(labels) {
+    this._debugCall("removeLabels", arguments);
+
+    if (!Array.isArray(labels)) {
+      labels = [labels];
+    }
+
+    this._logger.verbose("Parsing label names...");
+
+    let promises = [];
+
+    labels.forEach(async (label) => {
+      if (typeof label === "string") {
+        label = new Label(label, this.repository, this.owner);
+      }
+
+      if (!(label instanceof Label)) {
+        throw new TypeError(`Unexpected Label type encountered: \`${label.constructor.name}\``);
+      }
+
+      promises.push(label.id);
+    });
+
+    const issueID = await this.id;
+
+    // Wait for all the Issue IDs to fetch
+    return Promise
+      .all(promises)
+      .then((labelIDs) => {
+        this._logger.debug(`Calling GitHub GraphQL API to remove Labels from Issue #${this.number}...`);
+        this._logger.verbose(`Label IDs: ${labelIDs.join(", ")}`)
+
+        return ActionContext.github.graphql(
+          `mutation RemoveLabelsFromIssue($clientID: String!, $labelIDs: [ID!]!, $issueID: ID!) {
+            removeLabelsFromLabelable(input: {
+              clientMutationId: $clientID,
+              labelIds: $labelIDs,
+              labelableId: $issueID
+            }) {
+              clientMutationId
+            }
+          }`,
+          {
+            clientID: crypto.randomUUID(),
+            labelIDs: labelIDs,
+            issueID: issueID,
+          }
+        );
+      });
   }
 
   // // Comments ----------------------------------------------------------------------------------------------------------
@@ -228,33 +356,5 @@ module.exports = class Issue extends GraphQLAbstract {
   //   this._debugCall("addError", arguments);
 
   //   return this.addComment(`## :rotating_light: Error\n\n${message}`);
-  // }
-
-  // // Labels ------------------------------------------------------------------------------------------------------------
-
-  // /**
-  //  * Add Labels to the Issue.
-  //  *
-  //  * @param {string|string[]|Label|Label[]} labels - one or more Labels to add to the Issue
-  //  *
-  //  * @public @async
-  //  */
-  // async addLabels(labels) {
-  //   this._debugCall("addLabels", arguments);
-
-  //   throw new NotImplementedError();
-  // }
-
-  // /**
-  //  * Remove Labels from the Issue.
-  //  *
-  //  * @param {string|string[]|Label|Label[]} labels - one or more Labels to remove from the Issue
-  //  *
-  //  * @public @async
-  //  */
-  // async removeLabels(labels) {
-  //   this._debugCall("removeLabels", arguments);
-
-  //   throw new NotImplementedError();
   // }
 };

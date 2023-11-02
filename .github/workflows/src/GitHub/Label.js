@@ -26,6 +26,7 @@ module.exports = class Label extends GraphQLAbstract {
     color: String,
     createdAt: Date.parse,
     description: String,
+    id: String,
     isDefault: Boolean,
     // issues: Issue,   // Circular references (issue -> labels -> issues -> labels) breaks JS
     name: String,
@@ -73,6 +74,8 @@ module.exports = class Label extends GraphQLAbstract {
   constructor(name, repository = undefined, owner = undefined) {
     super();
 
+    this._logger = new Logger(`Label(${name})`);
+
     this._debugCall("constructor", arguments);
 
     this.name = name;
@@ -89,7 +92,7 @@ module.exports = class Label extends GraphQLAbstract {
    * @inheritdoc
    */
   static async create(caller, pageSize = GraphQLAbstract._PAGE_SIZE) {
-    const logger = new Logger(`[C]${this.name}`);
+    const logger = new Logger(`${this.name}[CLASS]`);
 
     this._debugStaticCall(this.name, "create", { caller: caller.constructor.name, pageSize: pageSize }, false, logger);
 
@@ -209,7 +212,7 @@ module.exports = class Label extends GraphQLAbstract {
 
     const query = `
       query GetLabelByName($owner: String!, $repository: String!, $labelName: String!) {
-        repository(owner: $owner, name: $repo, followRenames: true) {
+        repository(owner: $owner, name: $repository) {
           label(name: $labelName) {
             ${this.constructor._getPrimitiveFields().join(" ")}
           }

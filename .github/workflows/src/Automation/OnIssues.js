@@ -32,25 +32,9 @@ module.exports = class OnIssues extends WorkflowAbstract {
         `${ActionContext.context.repo.owner}/${ActionContext.context.repo.repo} #${issue.number}`,
     );
 
-    //this._logger.info(await issue.title);
-
-    const labels = await issue.labels;
-    this._logger.info(await labels[0].name);
-
-    // Should work
-    //issue.title = "New title to test";
-
-    // Shouldn't work
-    //issue.url = "Read-only baby";
-
-    //const issues = await issue.labels;
-
-    // await labels.forEach(async (label) => {
-    //   if (label.name.toLowerCase() == "help wanted") {
-    //     return await issue.removeLabels(label);
-    //   }
-    // });
-
+    await issue.removeLabels([
+      "Help Wanted",
+    ]);
     this._logger.endGroup();
 
     // // If the `Needs Triage` Label is still on the Issue, comment a warning

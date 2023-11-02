@@ -105,7 +105,7 @@ module.exports = class GraphQLAbstract extends WorkflowAbstract {
    * @returns {String[]} the primitive fields for the object
    */
   static _getPrimitiveFields() {
-    const logger = new Logger(`[C]${this.name}`);
+    const logger = new Logger(`${this.name}[CLASS]`);
     this._debugStaticCall(this.name, "_getPrimitiveFields", arguments, false, logger);
 
     logger.debug(`Building Primitive field set for ${this.name}...`);

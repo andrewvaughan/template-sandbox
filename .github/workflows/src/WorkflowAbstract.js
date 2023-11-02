@@ -49,7 +49,7 @@ module.exports = class WorkflowAbstract {
    */
   static _debugStaticCall(cls, func, args, verbose = false, logger = undefined) {
     if (!logger) {
-      logger = new Logger(`[C]${cls}`);
+      logger = new Logger(`${cls}[STATIC]`);
     }
 
     const cleanArgs = Object.keys(args)
