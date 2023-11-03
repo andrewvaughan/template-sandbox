@@ -1,6 +1,6 @@
 const ActionContext = require("../ActionContext");
+const EnhancedCore = require("../EnhancedCore");
 const NotImplementedError = require("../Errors/NotImplementedError");
-const Logger = require("../Logger");
 const GraphQLAbstract = require("./GraphQLAbstract");
 
 /**
@@ -79,7 +79,7 @@ module.exports = class Label extends GraphQLAbstract {
     this.repository = repository ? repository : ActionContext.context.repo.repo;
     this.owner = owner ? owner : ActionContext.context.repo.owner;
 
-    this._logger.debug(`New Label(name: ${this.name}, repository: ${this.repository}, owner: ${this.owner})`);
+    this._eCore.debug(`New Label(name: ${this.name}, repository: ${this.repository}, owner: ${this.owner})`);
 
     // Allows this to override all getters that aren't explicitly set.
     return new Proxy(this, this);
@@ -89,7 +89,7 @@ module.exports = class Label extends GraphQLAbstract {
    * @inheritdoc
    */
   static async create(caller, pageSize = GraphQLAbstract._PAGE_SIZE) {
-    const logger = new Logger(`${this.name}[CLASS]`);
+    const logger = new EnhancedCore(`${this.name}[CLASS]`);
 
     this._debugStaticCall(this.name, "create", { caller: caller.constructor.name, pageSize: pageSize }, false, logger);
 
@@ -116,9 +116,9 @@ module.exports = class Label extends GraphQLAbstract {
                 }
               }`,
             {
-              owner: caller.owner,
-              repository: caller.repository,
-              issueNumber: caller.number,
+              owner: await caller.owner,
+              repository: await caller.repository,
+              issueNumber: await caller.number,
               pageSize: pageSize,
             },
           )
@@ -141,22 +141,21 @@ module.exports = class Label extends GraphQLAbstract {
             // TODO Pagination
 
             logger.verbose("Building Label set...");
-            let promises = [];
 
-            labels.nodes.forEach(async (data) => {
+            let newSet = [];
+
+            labels.nodes.forEach((data) => {
               // Add data to the dataset that won't be available up front
               data["owner"] = caller.owner;
               data["repository"] = caller.repository; // TODO - Transition to proper Repository object lookup
 
-              promises.push(Label._build(data));
+              newSet.push(this._build(data));
             });
 
             logger.verbose("Label set build completed.");
 
             // Wait for all of the Label builds to complete
-            return Promise.all(promises).then((builtSet) => {
-              return builtSet;
-            });
+            return newSet;
           });
     }
 
@@ -168,8 +167,8 @@ module.exports = class Label extends GraphQLAbstract {
   /**
    * @inheritdoc
    */
-  static async _build(data, ignoreAdditional = true) {
-    const logger = new Logger(`[C]${this.name}`);
+  static _build(data, ignoreAdditional = true) {
+    const logger = new EnhancedCore(`[C]${this.name}`);
 
     this._debugStaticCall(this.name, "_build", { data: "...", ignoreAdditional: ignoreAdditional }, false, logger);
 

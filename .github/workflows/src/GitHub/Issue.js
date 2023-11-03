@@ -126,11 +126,12 @@ module.exports = class Issue extends GraphQLAbstract {
 
     this._debugCall("constructor", arguments);
 
+    // Setting via reflection avoids the special setter override
     this.number = number;
     this.repository = repository ? repository : ActionContext.context.repo.repo;
     this.owner = owner ? owner : ActionContext.context.repo.owner;
 
-    this._logger.debug(`New Issue(number: ${this.number}, repository: ${this.repository}, owner: ${this.owner})`);
+    this._eCore.debug(`New Issue(number: ${this.number}, repository: ${this.repository}, owner: ${this.owner})`);
 
     // Allows this to override all getters that aren't explicitly set.
     return new Proxy(this, this);
@@ -189,7 +190,7 @@ module.exports = class Issue extends GraphQLAbstract {
       labels = [labels];
     }
 
-    this._logger.verbose("Parsing label names...");
+    this._eCore.verbose("Parsing label names...");
 
     let promises = [];
 
@@ -209,8 +210,8 @@ module.exports = class Issue extends GraphQLAbstract {
 
     // Wait for all the Issue IDs to fetch
     return Promise.all(promises).then((labelIDs) => {
-      this._logger.debug(`Calling GitHub GraphQL API to add Labels to Issue #${this.number}...`);
-      this._logger.verbose(`Label IDs: ${labelIDs.join(", ")}`);
+      this._eCore.debug(`Calling GitHub GraphQL API to add Labels to Issue #${this.number}...`);
+      this._eCore.verbose(`Label IDs: ${labelIDs.join(", ")}`);
 
       return ActionContext.github.graphql(
         `mutation AddLabelsToIssue($clientID: String!, $labelIDs: [ID!]!, $issueID: ID!) {
@@ -247,7 +248,7 @@ module.exports = class Issue extends GraphQLAbstract {
       labels = [labels];
     }
 
-    this._logger.verbose("Parsing label names...");
+    this._eCore.verbose("Parsing label names...");
 
     let promises = [];
 
@@ -267,8 +268,8 @@ module.exports = class Issue extends GraphQLAbstract {
 
     // Wait for all the Issue IDs to fetch
     return Promise.all(promises).then((labelIDs) => {
-      this._logger.debug(`Calling GitHub GraphQL API to remove Labels from Issue #${this.number}...`);
-      this._logger.verbose(`Label IDs: ${labelIDs.join(", ")}`);
+      this._eCore.debug(`Calling GitHub GraphQL API to remove Labels from Issue #${this.number}...`);
+      this._eCore.verbose(`Label IDs: ${labelIDs.join(", ")}`);
 
       return ActionContext.github.graphql(
         `mutation RemoveLabelsFromIssue($clientID: String!, $labelIDs: [ID!]!, $issueID: ID!) {
@@ -303,7 +304,7 @@ module.exports = class Issue extends GraphQLAbstract {
   async addComment(comment) {
     this._debugCall("addComment", { comment: "..." });
 
-    this._logger.verbose(comment);
+    this._eCore.verbose(comment);
 
     const issueID = await this.id;
 
@@ -337,7 +338,7 @@ module.exports = class Issue extends GraphQLAbstract {
   async addNotice(message) {
     this._debugCall("addNotice", { message: "..." });
 
-    this._logger.verbose(message);
+    this._eCore.verbose(message);
 
     return this.addComment(`## :thought_balloon: Notice\n\n${message}`);
   }
@@ -354,7 +355,7 @@ module.exports = class Issue extends GraphQLAbstract {
   async addWarning(message) {
     this._debugCall("addWarning", { message: "..." });
 
-    this._logger.verbose(message);
+    this._eCore.verbose(message);
 
     return this.addComment(`## :warning: Warning\n\n${message}`);
   }
@@ -371,7 +372,7 @@ module.exports = class Issue extends GraphQLAbstract {
   async addError(message) {
     this._debugCall("addError", { message: "..." });
 
-    this._logger.verbose(message);
+    this._eCore.verbose(message);
 
     return this.addComment(`## :rotating_light: Error\n\n${message}`);
   }

@@ -1,7 +1,8 @@
 const ActionContext = require("../ActionContext");
+const EnhancedCore = require("../EnhancedCore");
 const NotImplementedError = require("../Errors/NotImplementedError");
-const Logger = require("../Logger");
 const GraphQLAbstract = require("./GraphQLAbstract");
+const ProjectV2ItemFieldValue = require("./ProjectV2ItemFieldValue");
 
 /**
  * ProjectV2Item.
@@ -9,7 +10,7 @@ const GraphQLAbstract = require("./GraphQLAbstract");
  * @classdesc
  * Manages various actions on GitHub ProjectV2Items via GraphQL API.
  *
- * @see {@link https://docs.github.com/en/graphql/reference/objects#projectv2}
+ * @see {@link https://docs.github.com/en/graphql/reference/objects#projectv2item}
  * @see {@link https://github.com/actions/github-script}
  *
  * @author Andrew Vaughan <hello@andrewvaughan.io>
@@ -27,7 +28,7 @@ module.exports = class ProjectV2Item extends GraphQLAbstract {
     // creator: Actor,
     databaseId: Number,
     // fieldValueByName: ProjectV2ItemFieldValue,  // TODO - Search function
-    // fieldValues: ProjectV2ItemFieldValue,
+    fieldValues: ProjectV2ItemFieldValue,
     id: String,
     isArchived: Boolean,
     // project: ProjectV2,
@@ -41,10 +42,28 @@ module.exports = class ProjectV2Item extends GraphQLAbstract {
   static _PAGE_SIZE = 2;
 
   /**
+   * Create a ProjectV2Item.
+   *
+   * This doesn't load data from GitHub, as that's lazy-loaded when data is first accessed.
+   *
+   * @returns {Proxy} of this object to allow for enhanced getters and setters
+   *
+   * @override @public @constructor
+   */
+  constructor() {
+    super();
+
+    this._debugCall("constructor", arguments);
+
+    // Allows this to override all getters that aren't explicitly set.
+    return new Proxy(this, this);
+  }
+
+  /**
    * @inheritdoc
    */
   static async create(caller, pageSize = ProjectV2Item._PAGE_SIZE) {
-    const logger = new Logger(`${this.name}[CLASS]`);
+    const logger = new EnhancedCore(`${this.name}[CLASS]`);
 
     this._debugStaticCall(this.name, "create", { caller: caller.constructor.name, pageSize: pageSize }, false, logger);
 
@@ -73,9 +92,9 @@ module.exports = class ProjectV2Item extends GraphQLAbstract {
               }
             }`,
             {
-              owner: caller.owner,
-              repository: caller.repository,
-              issueNumber: caller.number,
+              owner: await caller.owner,
+              repository: await caller.repository,
+              issueNumber: await caller.number,
               pageSize: pageSize,
             },
           )
@@ -99,18 +118,16 @@ module.exports = class ProjectV2Item extends GraphQLAbstract {
 
             logger.verbose("Building Project Item set...");
 
-            let promises = [];
+            let newSet = [];
 
-            projectItems.nodes.forEach(async (data) => {
-              promises.push(ProjectV2Item._build(data));
+            projectItems.nodes.forEach((data) => {
+              newSet.push(this._build(data));
             });
 
             logger.verbose("Project Item set build completed.");
 
             // Wait for all of the Label builds to complete
-            return Promise.all(promises).then((builtSet) => {
-              return builtSet;
-            });
+            return newSet;
           });
     }
 
@@ -122,8 +139,8 @@ module.exports = class ProjectV2Item extends GraphQLAbstract {
   /**
    * @inheritdoc
    */
-  static async _build(data, ignoreAdditional = true) {
-    const logger = new Logger(`[C]${this.name}`);
+  static _build(data, ignoreAdditional = true) {
+    const logger = new EnhancedCore(`[C]${this.name}`);
 
     this._debugStaticCall(this.name, "_build", { data: "...", ignoreAdditional: ignoreAdditional }, false, logger);
 

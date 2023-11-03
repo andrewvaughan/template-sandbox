@@ -1,6 +1,6 @@
 const ActionContext = require("../ActionContext");
+const EnhancedCore = require("../EnhancedCore");
 const NotImplementedError = require("../Errors/NotImplementedError");
-const Logger = require("../Logger");
 const WorkflowAbstract = require("../WorkflowAbstract");
 
 /**
@@ -57,14 +57,17 @@ module.exports = class GraphQLAbstract extends WorkflowAbstract {
   /**
    * A basic constructor that allows for overriding getters dynamically.
    *
-   * @param {String} [loggerSubType=undefined] - an optional subtype to include with the logger name
+   * You must override this constructor and return a proxy for this to work. Even if you only call `super()` and return
+   * a Proxy, don't skip this step.
+   *
+   * @param {String|Object} [loggerConfig=undefined] - an optional config to include with the logger name
    *
    * @returns {Proxy} representing this object, allowing for advanced getters and setters
    *
    * @public @constructor
    */
-  constructor(loggerSubType = undefined) {
-    super(loggerSubType);
+  constructor(loggerConfig = undefined) {
+    super(loggerConfig);
 
     // Allows this to override all getters that aren't explicitly set. Copy this line into any child constructors.
     return new Proxy(this, this);
@@ -92,10 +95,14 @@ module.exports = class GraphQLAbstract extends WorkflowAbstract {
    * @param {Object<String, *>} data - the data from the API call to build from
    * @param {Boolean} [ignoreAdditional=true] - whether to ignore unmapped data types that appear in the results
    *
+   * @returns {GraphQLAbstract}
+   *
    * @throws {ReferenceError} if a required field is missing from `dat`
    * @throws {ReferenceError} when encountering an unexpected data type and `ignoreAdditional` is `false`
+   *
+   * @public @static
    */
-  static async _build(data, ignoreAdditional = true) {
+  static _build(data, ignoreAdditional = true) {
     this._debugStaticCall(this.name, "_build", arguments);
 
     throw new NotImplementedError(`Missing implementation of the \`${this.name}._build\` static method.`);
@@ -104,17 +111,19 @@ module.exports = class GraphQLAbstract extends WorkflowAbstract {
   /**
    * Return fields not mapped to GraphQLAbstract objects.
    *
+   * @param {Object<String, Function>} [map=this._fields] the field mapping
+   *
    * @returns {String[]} the primitive fields for the object
    */
-  static _getPrimitiveFields() {
-    const logger = new Logger(`${this.name}[CLASS]`);
+  static _getPrimitiveFields(map = undefined) {
+    const logger = new EnhancedCore(`${this.name}[CLASS]`);
     this._debugStaticCall(this.name, "_getPrimitiveFields", arguments, false, logger);
 
     logger.debug(`Building Primitive field set for ${this.name}...`);
 
     let fields = [];
 
-    for (const [field, func] of Object.entries(this._fields)) {
+    for (const [field, func] of Object.entries(map ? map : this._fields)) {
       if (func.prototype instanceof GraphQLAbstract) {
         continue;
       }
@@ -191,8 +200,8 @@ module.exports = class GraphQLAbstract extends WorkflowAbstract {
     const cls = this.constructor.name;
     const fields = target.constructor._fields;
 
-    // Only debug direct calls if in verbose-mode
-    target._debugCall("GET", { prop: sProp }, direct ? true : false);
+    // Only debug direct and missing calls only in verbose-mode
+    target._debugCall("GET", { prop: sProp }, direct || !(prop in target) ? true : false);
 
     // Any variables explicitly set in this object take precedence over the cache.
     if (typeof direct !== "undefined") {
@@ -201,26 +210,26 @@ module.exports = class GraphQLAbstract extends WorkflowAbstract {
 
     // If the property isn't in the field map, there is nothing more to do
     if (!(sProp in fields)) {
-      target._logger.verbose(`Field \`${cls}.${sProp}\` requested, but doesn't exist.`);
+      target._eCore.verbose(`Field \`${cls}.${sProp}\` requested, but doesn't exist.`);
       return direct;
     }
 
     // If a cache exists of the property, return the cache.
     if (sProp in target._cache) {
-      target._logger.verbose(`Lookup \`${cls}.${sProp}\` cache hit.`);
+      target._eCore.verbose(`Lookup \`${cls}.${sProp}\` cache hit.`);
       return target._cache[sProp];
     }
 
-    target._logger.verbose(`Lookup \`${cls}.${sProp}\` cache miss.`);
+    target._eCore.verbose(`Lookup \`${cls}.${sProp}\` cache miss.`);
 
     // If the requested property is a GraphQLAbstract class, use the proper `create` method
     if (fields[sProp].prototype instanceof GraphQLAbstract) {
-      target._logger.debug(`Sending creation request to mapped \`${fields[sProp].name}\` class to generate`);
+      target._eCore.debug(`Sending creation request to mapped \`${fields[sProp].name}\` class to generate.`);
 
       return (async function LoadFromSmartObject() {
         return await fields[sProp].create(target).then((created) => {
-          target._logger.verbose("Created from response:");
-          target._logger.verbose(created);
+          target._eCore.verbose("Created from response:");
+          target._eCore.verbose(created);
 
           target._cache[sProp] = created;
           return target._cache[sProp];
@@ -229,25 +238,25 @@ module.exports = class GraphQLAbstract extends WorkflowAbstract {
 
       // Otherwise, load the primitives for the object and return the value
     } else {
-      target._logger.debug("Loading data from GitHub GraphQL API...");
+      target._eCore.debug("Loading data from GitHub GraphQL API...");
 
       const [query, map, container] = target._getGraphQLQuery();
 
-      target._logger.verbose("Query:");
-      target._logger.verbose(query);
+      target._eCore.verbose("Query:");
+      target._eCore.verbose(query);
 
-      target._logger.verbose("Map:");
-      target._logger.verbose(map);
+      target._eCore.verbose("Map:");
+      target._eCore.verbose(map);
 
-      target._logger.verbose("Container:");
-      target._logger.verbose(container);
+      target._eCore.verbose("Container:");
+      target._eCore.verbose(container);
 
       return (async function LoadPrimitiveFromGraphQL() {
         return await ActionContext.github.graphql(query, map).then((response) => {
-          target._logger.debug("GraphQL API call complete.");
+          target._eCore.debug("GraphQL API call complete.");
 
-          target._logger.verbose("Full GraphQL API response:");
-          target._logger.verbose(response);
+          target._eCore.verbose("Full GraphQL API response:");
+          target._eCore.verbose(response);
 
           // Travel down the returned response to the data container
           container.forEach((key) => {
@@ -265,12 +274,12 @@ module.exports = class GraphQLAbstract extends WorkflowAbstract {
 
             // If the field is a GraphQLAbstract instance, run the create function
             if (func.prototype instanceof GraphQLAbstract) {
-              target._logger.verbose(`Calling \`create\` method on \`${func.name}\` for \`${sKey}\`...`);
+              target._eCore.verbose(`Calling \`create\` method on \`${func.name}\` for \`${sKey}\`...`);
               target._cache[sKey] = func._build(value);
 
               // Otherwise, run the configured function directly on the value
             } else {
-              target._logger.verbose(`Calling \`${func.name}\` on \`${sKey}\`...`);
+              target._eCore.verbose(`Calling \`${func.name}\` on \`${sKey}\`...`);
               target._cache[sKey] = func(value);
             }
           }
@@ -331,12 +340,12 @@ module.exports = class GraphQLAbstract extends WorkflowAbstract {
 
     target._debugCall("SET", {
       prop: sProp,
-      value: isPrimitive || target._logger.debugLevel >= Logger.LEVEL.VERBOSE ? value : "...",
+      value: isPrimitive || target._eCore.debugLevel >= EnhancedCore.LOG_LEVEL.VERBOSE ? value : "...",
     });
 
     // If the property exists explicitly, clear the cache before setting it.
     if (Reflect.has(target, prop)) {
-      target._logger.debug(`Class property \`${sProp}\` set; clearing cache.`);
+      target._eCore.verbose(`Class property \`${sProp}\` set; clearing cache.`);
       target._cache = {};
 
       return Reflect.set(...arguments);

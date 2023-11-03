@@ -1,4 +1,5 @@
 const ActionContext = require("../ActionContext");
+const Constants = require("../Constants");
 const Issue = require("../GitHub/Issue");
 const WorkflowAbstract = require("../WorkflowAbstract");
 
@@ -27,7 +28,7 @@ module.exports = class OnIssues extends WorkflowAbstract {
     const issue = new Issue(ActionContext.context.issue.number);
 
     // // Remove the `Help Wanted` Label
-    // this._logger.startGroup(
+    // this._eCore.startGroup(
     //   "Removing 'Help Wanted' Label from Issue " +
     //     `${ActionContext.context.repo.owner}/${ActionContext.context.repo.repo} #${issue.number}`,
     // );
@@ -36,10 +37,11 @@ module.exports = class OnIssues extends WorkflowAbstract {
     //   "Help Wanted",
     // ]);
 
-    // this._logger.endGroup();
+    // this._eCore.info("`Help Wanted` Label removed.");
+    // this._eCore.endGroup();
 
     // // If the `Needs Triage` Label is still on the Issue, comment a warning
-    // this._logger.startGroup(`Checking for 'Needs Triage' Label on Issue #${issue.number}`);
+    // this._eCore.startGroup(`Checking for 'Needs Triage' Label on Issue #${issue.number}`);
 
     // const labels = await issue.labels;
     // let found = false;
@@ -48,41 +50,83 @@ module.exports = class OnIssues extends WorkflowAbstract {
     //   if (label.name.toLowerCase() == "needs triage") {
     //     found = true;
 
-    //     this._logger.warning(
-    //       this._logger.shrinkWhitespace(`
+    //     this._eCore.warning(
+    //       this._eCore.shrinkWhitespace(`
     //         Assigning non-triaged issues can be indicative of not following the defined Software Development Lifecycle.
-    //         A warning will be added to the Issue explaining the risk.
+    //         This runner is adding a warning to the Issue to explain the risk.
     //       `),
-    //       `Label 'Needs Triage' found on Issue #${issue.number} during user assignment`
+    //       `Label 'Needs Triage' found on Issue #${issue.number} during user assignment`,
     //     );
 
     //     return await issue.addWarning(
-    //       this._logger.shrinkWhitespace(`
-    //         This Issue is still marked as being in
-    //         [Triage](https://github.com/andrewvaughan/template-core/blob/main/.github/CONTRIBUTING.md#issue-triage) -
-    //         however, a Contributor assignment was just made. Non-triaged issues may not be approved, and any work done
-    //         on unaccepted Issues cannot be guaranteed to be road-mapped.\n
-    //         Project Maintainers should Triage this issue or inform the Contributor on whether to move forward.
+    //       this._eCore.shrinkWhitespace(`
+    //         A Contributor assignment was just made, however, this Issue is still marked as being in
+    //         [Triage](${Constants.URL.CONTRIBUTING}#issue-triage). Issued marked as needing triage can't undergo
+    //         approval. There is no responsibility for Project Maintainers to accept any work performed on non-triaged
+    //         issues.
+
+    //         A Project Maintainer needs to triage this issue or inform the Contributor on whether to halt progress.
+
+    //         - [ ] @andrewvaughan to resolve the triage for this Issue
     //       `)
     //     );
     //   }
     // });
 
     // if (!found) {
-    //   this._logger.notice(
-    //     "Label 'Needs Triage' did not exist on issue during user assignment. This is expected.",
+    //   this._eCore.notice(
+    //     "Label 'Needs Triage' didn't exist on issue during user assignment, as expected.",
     //     `Label 'Needs Triage' expectedly missing from Issue #${issue.number}`,
     //   );
     // }
 
-    // this._logger.endGroup();
+    // this._eCore.endGroup();
 
     // If the Issue's Project status isn't set, `Done`, or `Parking Lot`, comment a warning
-    this._logger.startGroup(`Checking for valid status on Issue #${await issue.number}`);
+    this._eCore.startGroup(`Checking for valid Project status on Issue #${await issue.number}`);
 
-    const projItems = await issue.projectItems;
+    // const projItems = await issue.projectItems;
 
-    this._logger.debug(projItems);
+    // if (projItems.length <= 0) {
+    //   await issue.addError(
+    //     issue.shrinkWhitespace(`
+    //       This Issue isn't part of an ongoing Project, but a Project Maintainer has assigned it to a Contributor. This
+    //       goes against the Software Development Lifecycle and Contributing Guidelines. A Project Maintainer needs to add
+    //       this Issue to the appropriate Project and give it the appropriate status.
+
+    //       - [ ] @andrewvaughan to resolve missing Project
+    //     `),
+    //   );
+
+    //   const msg = "No Project associated with this Issue for automated status management.";
+    //   this._eCore.error(msg);
+    //   throw new Error(msg);
+    // }
+
+    // if (projItems.length >= 2) {
+    //   await issue.addError(
+    //     issue.shrinkWhitespace(`
+    //       This Issue is currently assigned to multiple projects. This prevents automation utilities from functioning on
+    //       this Issue. A Project Maintainer needs to resolve the duplicative Project assignment for this Issue.
+
+    //       - [ ] @andrewvaughan to resolve duplicative projects
+    //     `),
+    //   );
+
+    //   const msg = "This Issue has multiple Projects associated with it, preventing automation.";
+    //   this._eCore.error(msg);
+    //   throw new Error(msg);
+    // }
+
+    // const item = projItems[0];
+
+    // this._eCore.info("ITEM:");
+    // this._eCore.info(item);
+
+    // const fields = await item.fieldValues;
+
+    // this._eCore.info("FIELDS:");
+    // this._eCore.debug(fields);
 
     // const status = await project.status;
     // const url = await issue.url;
@@ -112,6 +156,6 @@ module.exports = class OnIssues extends WorkflowAbstract {
     //   );
     // }
 
-    this._logger.endGroup();
+    this._eCore.endGroup();
   }
 };
