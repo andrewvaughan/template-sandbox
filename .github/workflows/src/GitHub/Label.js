@@ -2,7 +2,6 @@ const ActionContext = require("../ActionContext");
 const NotImplementedError = require("../Errors/NotImplementedError");
 const Logger = require("../Logger");
 const GraphQLAbstract = require("./GraphQLAbstract");
-const Issue = require("./Issue");
 
 /**
  * Label.
@@ -28,7 +27,7 @@ module.exports = class Label extends GraphQLAbstract {
     description: String,
     id: String,
     isDefault: Boolean,
-    // issues: Issue,   // Circular references (issue -> labels -> issues -> labels) breaks JS
+    // issues: Issue,               // TODO - Circular reference
     name: String,
     // pullRequests: PullRequest,
     // repository: Repository,
@@ -61,7 +60,7 @@ module.exports = class Label extends GraphQLAbstract {
   /**
    * Create a Label.
    *
-   * This doesn't load Label data from GitHub, as that's lazy-loaded when data is first accessed.
+   * This doesn't load data from GitHub, as that's lazy-loaded when data is first accessed.
    *
    * @param {String} name - the Label name to load
    * @param {String} [repository=context.repo.repo] - the Repository the Issue is part of
@@ -155,11 +154,9 @@ module.exports = class Label extends GraphQLAbstract {
             logger.verbose("Label set build completed.");
 
             // Wait for all of the Label builds to complete
-            return Promise
-              .all(promises)
-              .then((labelSet) => {
-                return labelSet;
-              });
+            return Promise.all(promises).then((builtSet) => {
+              return builtSet;
+            });
           });
     }
 

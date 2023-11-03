@@ -26,62 +26,63 @@ module.exports = class OnIssues extends WorkflowAbstract {
 
     const issue = new Issue(ActionContext.context.issue.number);
 
-    // Remove the `Help Wanted` Label
-    this._logger.startGroup(
-      "Removing 'Help Wanted' Label from Issue " +
-        `${ActionContext.context.repo.owner}/${ActionContext.context.repo.repo} #${issue.number}`,
-    );
+    // // Remove the `Help Wanted` Label
+    // this._logger.startGroup(
+    //   "Removing 'Help Wanted' Label from Issue " +
+    //     `${ActionContext.context.repo.owner}/${ActionContext.context.repo.repo} #${issue.number}`,
+    // );
 
-    await issue.removeLabels([
-      "Help Wanted",
-    ]);
+    // await issue.removeLabels([
+    //   "Help Wanted",
+    // ]);
 
-    this._logger.endGroup();
+    // this._logger.endGroup();
 
+    // // If the `Needs Triage` Label is still on the Issue, comment a warning
+    // this._logger.startGroup(`Checking for 'Needs Triage' Label on Issue #${issue.number}`);
 
-    // If the `Needs Triage` Label is still on the Issue, comment a warning
-    this._logger.startGroup(`Checking for 'Needs Triage' Label on Issue #${issue.number}`);
+    // const labels = await issue.labels;
+    // let found = false;
 
-    const labels = await issue.labels;
-    let found = false;
+    // await labels.forEach(async (label) => {
+    //   if (label.name.toLowerCase() == "needs triage") {
+    //     found = true;
 
-    await labels.forEach(async (label) => {
-      if (label.name.toLowerCase() == "needs triage") {
-        found = true;
+    //     this._logger.warning(
+    //       this._logger.shrinkWhitespace(`
+    //         Assigning non-triaged issues can be indicative of not following the defined Software Development Lifecycle.
+    //         A warning will be added to the Issue explaining the risk.
+    //       `),
+    //       `Label 'Needs Triage' found on Issue #${issue.number} during user assignment`
+    //     );
 
-        this._logger.warning(
-          this._logger.shrinkWhitespace(`
-            Assigning non-triaged issues can be indicative of not following the defined Software Development Lifecycle.
-            A warning will be added to the Issue explaining the risk.
-          `),
-          `Label 'Needs Triage' found on Issue #${issue.number} during user assignment`
-        );
+    //     return await issue.addWarning(
+    //       this._logger.shrinkWhitespace(`
+    //         This Issue is still marked as being in
+    //         [Triage](https://github.com/andrewvaughan/template-core/blob/main/.github/CONTRIBUTING.md#issue-triage) -
+    //         however, a Contributor assignment was just made. Non-triaged issues may not be approved, and any work done
+    //         on unaccepted Issues cannot be guaranteed to be road-mapped.\n
+    //         Project Maintainers should Triage this issue or inform the Contributor on whether to move forward.
+    //       `)
+    //     );
+    //   }
+    // });
 
-        return await issue.addWarning(
-          this._logger.shrinkWhitespace(`
-            This Issue is still marked as being in
-            [Triage](https://github.com/andrewvaughan/template-core/blob/main/.github/CONTRIBUTING.md#issue-triage) -
-            however, a Contributor assignment was just made. Non-triaged issues may not be approved, and any work done
-            on unaccepted Issues cannot be guaranteed to be road-mapped.\n
-            Project Maintainers should Triage this issue or inform the Contributor on whether to move forward.
-          `)
-        );
-      }
-    });
+    // if (!found) {
+    //   this._logger.notice(
+    //     "Label 'Needs Triage' did not exist on issue during user assignment. This is expected.",
+    //     `Label 'Needs Triage' expectedly missing from Issue #${issue.number}`,
+    //   );
+    // }
 
-    if (!found) {
-      this._logger.notice(
-        "Label 'Needs Triage' did not exist on issue during user assignment. This is expected.",
-        `Label 'Needs Triage' expectedly missing from Issue #${issue.number}`,
-      );
-    }
+    // this._logger.endGroup();
 
-    this._logger.endGroup();
+    // If the Issue's Project status isn't set, `Done`, or `Parking Lot`, comment a warning
+    this._logger.startGroup(`Checking for valid status on Issue #${await issue.number}`);
 
-    // // If the Issue's Project status isn't set, `Done`, or `Parking Lot`, comment a warning
-    // logger.startGroup(`Checking for valid status on Issue #${issueNumber}`);
+    const projItems = await issue.projectItems;
 
-    // const project = await issue.getProject();
+    this._logger.debug(projItems);
 
     // const status = await project.status;
     // const url = await issue.url;
@@ -111,6 +112,6 @@ module.exports = class OnIssues extends WorkflowAbstract {
     //   );
     // }
 
-    // logger.endGroup();
+    this._logger.endGroup();
   }
 };

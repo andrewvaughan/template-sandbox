@@ -218,15 +218,13 @@ module.exports = class GraphQLAbstract extends WorkflowAbstract {
       target._logger.debug(`Sending creation request to mapped \`${fields[sProp].name}\` class to generate`);
 
       return (async function LoadFromSmartObject() {
-        return await fields[sProp]
-          .create(target)
-          .then((created) => {
-            target._logger.verbose("Created from response:");
-            target._logger.verbose(created);
+        return await fields[sProp].create(target).then((created) => {
+          target._logger.verbose("Created from response:");
+          target._logger.verbose(created);
 
-            target._cache[sProp] = created;
-            return target._cache[sProp];
-          });
+          target._cache[sProp] = created;
+          return target._cache[sProp];
+        });
       })();
 
       // Otherwise, load the primitives for the object and return the value

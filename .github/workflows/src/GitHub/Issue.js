@@ -1,10 +1,9 @@
 const ActionContext = require("../ActionContext");
 const NotImplementedError = require("../Errors/NotImplementedError");
-const Logger = require("../Logger");
 const GraphQLAbstract = require("./GraphQLAbstract");
 const Label = require("./Label");
-
 const crypto = require("crypto");
+const ProjectV2Item = require("./ProjectV2Item");
 
 /**
  * Issue.
@@ -42,7 +41,7 @@ module.exports = class Issue extends GraphQLAbstract {
     databaseId: Number,
     // editor: Actor,
     fullDatabaseId: Number,
-    // hovercard: Hovercard,   // Requires additional, non-standard parameters to function
+    // hovercard: Hovercard,        // TODO - Search function
     id: String,
     includesCreatedEdit: Boolean,
     isPinned: Boolean,
@@ -55,8 +54,8 @@ module.exports = class Issue extends GraphQLAbstract {
     number: Number,
     // participants: User,
     // projectCards: ProjectCard,
-    // projectItems: ProjectV2Item,
-    // projectV2: ProjectV2,   // Requires additional, non-standard paramters to function
+    projectItems: ProjectV2Item,
+    // projectV2: ProjectV2,        // TODO - Search function
     // projectsV2: ProjectV2,
     publishedAt: Date.parse,
     // reactionGroups: ReactionGroup,
@@ -81,7 +80,7 @@ module.exports = class Issue extends GraphQLAbstract {
     viewerCanReopen: Boolean,
     viewerCanSubscribe: Boolean,
     viewerCanUpdate: Boolean,
-    // viewerCannotUpdateReasons,   // TODO returns an array of strings (enums), need to handle
+    // viewerCannotUpdateReasons,   // TODO - Returns Array of Strings
     viewerDidAuthor: Boolean,
     viewerSubscription: String,
     viewerThreadSubscriptionFormAction: String,
@@ -112,7 +111,7 @@ module.exports = class Issue extends GraphQLAbstract {
   /**
    * Create an Issue.
    *
-   * This doesn't load Issue data from GitHub, as that's lazy-loaded when data is first accessed.
+   * This doesn't load data from GitHub, as that's lazy-loaded when data is first accessed.
    *
    * @param {Number} number - the Issue number to load
    * @param {String} [repository=context.repo.repo] - the Repository the Issue is part of
@@ -209,14 +208,12 @@ module.exports = class Issue extends GraphQLAbstract {
     const issueID = await this.id;
 
     // Wait for all the Issue IDs to fetch
-    return Promise
-      .all(promises)
-      .then((labelIDs) => {
-        this._logger.debug(`Calling GitHub GraphQL API to add Labels to Issue #${this.number}...`);
-        this._logger.verbose(`Label IDs: ${labelIDs.join(", ")}`)
+    return Promise.all(promises).then((labelIDs) => {
+      this._logger.debug(`Calling GitHub GraphQL API to add Labels to Issue #${this.number}...`);
+      this._logger.verbose(`Label IDs: ${labelIDs.join(", ")}`);
 
-        return ActionContext.github.graphql(
-          `mutation AddLabelsToIssue($clientID: String!, $labelIDs: [ID!]!, $issueID: ID!) {
+      return ActionContext.github.graphql(
+        `mutation AddLabelsToIssue($clientID: String!, $labelIDs: [ID!]!, $issueID: ID!) {
             addLabelsToLabelable(input: {
               clientMutationId: $clientID,
               labelIds: $labelIDs,
@@ -225,13 +222,13 @@ module.exports = class Issue extends GraphQLAbstract {
               clientMutationId
             }
           }`,
-          {
-            clientID: crypto.randomUUID(),
-            labelIDs: labelIDs,
-            issueID: issueID,
-          }
-        );
-      });
+        {
+          clientID: crypto.randomUUID(),
+          labelIDs: labelIDs,
+          issueID: issueID,
+        },
+      );
+    });
   }
 
   /**
@@ -269,14 +266,12 @@ module.exports = class Issue extends GraphQLAbstract {
     const issueID = await this.id;
 
     // Wait for all the Issue IDs to fetch
-    return Promise
-      .all(promises)
-      .then((labelIDs) => {
-        this._logger.debug(`Calling GitHub GraphQL API to remove Labels from Issue #${this.number}...`);
-        this._logger.verbose(`Label IDs: ${labelIDs.join(", ")}`)
+    return Promise.all(promises).then((labelIDs) => {
+      this._logger.debug(`Calling GitHub GraphQL API to remove Labels from Issue #${this.number}...`);
+      this._logger.verbose(`Label IDs: ${labelIDs.join(", ")}`);
 
-        return ActionContext.github.graphql(
-          `mutation RemoveLabelsFromIssue($clientID: String!, $labelIDs: [ID!]!, $issueID: ID!) {
+      return ActionContext.github.graphql(
+        `mutation RemoveLabelsFromIssue($clientID: String!, $labelIDs: [ID!]!, $issueID: ID!) {
             removeLabelsFromLabelable(input: {
               clientMutationId: $clientID,
               labelIds: $labelIDs,
@@ -285,13 +280,13 @@ module.exports = class Issue extends GraphQLAbstract {
               clientMutationId
             }
           }`,
-          {
-            clientID: crypto.randomUUID(),
-            labelIDs: labelIDs,
-            issueID: issueID,
-          }
-        );
-      });
+        {
+          clientID: crypto.randomUUID(),
+          labelIDs: labelIDs,
+          issueID: issueID,
+        },
+      );
+    });
   }
 
   // Comments ----------------------------------------------------------------------------------------------------------
@@ -326,7 +321,7 @@ module.exports = class Issue extends GraphQLAbstract {
         clientID: crypto.randomUUID(),
         issueID: issueID,
         comment: comment,
-      }
+      },
     );
   }
 
