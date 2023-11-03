@@ -20,17 +20,13 @@ module.exports = class Logger {
   /**
    * ANSI terminal codes for various formatting.
    *
-   * @type {Object.<string, string>}
-   *
-   * @public
-   * @constant
-   * @static
+   * @public @static @constant @enum @type {Object.<String, String|Object>}
    */
   static ANSI = {
     /**
      * ANSI foreground text color codes.
      *
-     * @type {Object.<string, string>}
+     * @public @static @constant @enum @type {Object.<String, String>}
      */
     FG: {
       BLACK: "\u001b[30m",
@@ -46,7 +42,7 @@ module.exports = class Logger {
     /**
      * ANSI background text color codes.
      *
-     * @type {Object.<string, string>}
+     * @public @static @constant @enum @type {Object.<String, String>}
      */
     BG: {
       BLACK: "\u001b[40m",
@@ -70,11 +66,7 @@ module.exports = class Logger {
   /**
    * Types of annotations GitHub workflow logging supports.
    *
-   * @type {Object.<string, string>}
-   *
-   * @public
-   * @constant
-   * @static
+   * @public @static @constant @enum @type {Object.<String, String>}
    */
   static ANNOTATION = {
     NOTICE: "notice",
@@ -85,11 +77,7 @@ module.exports = class Logger {
   /**
    * Levels of verbosity for debug logging.
    *
-   * @type {Object.<string, int>}
-   *
-   * @public
-   * @constant
-   * @static
+   * @public @static @constant @enum @type {Object.<String, Number>}
    */
   static LEVEL = {
     DEFAULT: 0,
@@ -100,9 +88,7 @@ module.exports = class Logger {
   /**
    * The logging group levels currently opened.
    *
-   * @type {int}
-   *
-   * @protected
+   * @protected @type {Number}
    */
   _groupLevel = 0;
 
@@ -111,19 +97,14 @@ module.exports = class Logger {
    *
    * Set during first-access by the getter, below.
    *
-   * @type {int}
-   *
-   * @protected
+   * @protected @constant @type {Number}
    */
   _debugLevel;
 
   /**
    * The name of this logger.
    *
-   * @type {string}
-   *
-   * @protected
-   * @readonly
+   * @protected @constant @type {String}
    */
   _name;
 
@@ -132,9 +113,7 @@ module.exports = class Logger {
    *
    * If not set, formatting uses the system default.
    *
-   * @type {string}
-   *
-   * @public
+   * @public @type {String}
    */
   locale;
 
@@ -143,20 +122,18 @@ module.exports = class Logger {
    *
    * If not set, formatting uses the system default.
    *
-   * @type {string}
-   *
-   * @public
+   * @public @type {String}
    */
   timezone;
 
   /**
    * Create a logger with the given name.
    *
-   * @param {string} name - the name of the logger (default: none)
-   * @param {string} locale - the name of the locale to use for dates and times (default: system)
-   * @param {string} timezone - the name of the timezone to use for dates and times (default: system)
+   * @param {String} [name=undefined] - the name of the logger
+   * @param {String} [locale=system] - the name of the locale to use for dates and times
+   * @param {String} [timezone=system] - the name of the timezone to use for dates and times
    *
-   * @constructor
+   * @public @constructor
    */
   constructor(name = undefined, locale = undefined, timezone = undefined) {
     this._name = name;
@@ -198,8 +175,7 @@ module.exports = class Logger {
    *     (new Logger("example")).debug("Hello World");
    * ```
    *
-   * @type {int}
-   * @public
+   * @public @type {Number}
    */
   get debugLevel() {
     if (typeof this._debugLevel === "undefined") {
@@ -233,10 +209,10 @@ module.exports = class Logger {
    * If provided non-`string` type as the message, no word wrapping occurs.
    *
    * @param {*} message - the message to output
-   * @param {string} level - the name of the logging level
-   * @param {string} [workflowCommand=""] - the GitHub Workflow command to prepend to the message
-   * @param {boolean} [doWrap=true] - whether to enable string wrapping
-   * @param {string} [levelANSI=Logger.ANSI.BOLD] - the ANSI formatting codes for the level name
+   * @param {String} level - the name of the logging level
+   * @param {String} [workflowCommand=""] - the GitHub Workflow command to prepend to the message
+   * @param {Boolean} [doWrap=true] - whether to enable string wrapping
+   * @param {String} [levelANSI=Logger.ANSI.BOLD] - the ANSI formatting codes for the level name
    *
    * @protected
    */
@@ -308,13 +284,13 @@ module.exports = class Logger {
    * Format and present a GitHub annotation.
    *
    * @param {*} message - the message or object to log
-   * @param {string} notation - the notation, one of `Logger.ANNOTATION`
-   * @param {string} title - the title of the annotation (default: none)
-   * @param {string} file - the filename (default: none)
-   * @param {int} line - the file (start) line number (default: none)
-   * @param {int} endLine - the file end line number (default: none)
-   * @param {int} col - the column number (default: none)
-   * @param {int} endCol - the ending column number (default: none)
+   * @param {String} notation - the notation, one of `Logger.ANNOTATION`
+   * @param {String} [title=undefined] - the title of the annotation
+   * @param {String} [file=undefined] - the filename
+   * @param {Number} [line=undefined] - the file start line number
+   * @param {Number} [endLine=undefined] - the file end line number
+   * @param {Number} [col=undefined] - the column number
+   * @param {Number} [endCol=undefined] - the ending column number
    *
    * @protected
    */
@@ -370,12 +346,12 @@ module.exports = class Logger {
    * @see {@link https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-error-message}
    *
    * @param {*} message - the message or object to log
-   * @param {*} title - the title of the annotation (default: none)
-   * @param {*} file - the filename (default: none)
-   * @param {*} line - the file (start) line number (default: none)
-   * @param {*} endLine - the file end line number (default: none)
-   * @param {int} col - the column number (default: none)
-   * @param {int} endCol - the ending column number (default: none)
+   * @param {String} [title=undefined] - the title of the annotation
+   * @param {String} [file=undefined] - the filename
+   * @param {Number} [line=undefined] - the file start line number
+   * @param {Number} [endLine=undefined] - the file end line number
+   * @param {Number} [col=undefined] - the column number
+   * @param {Number} [endCol=undefined] - the ending column number
    *
    * @public
    */
@@ -397,12 +373,12 @@ module.exports = class Logger {
    * @see {@link https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-a-notice-message}
    *
    * @param {*} message - the message or object to log
-   * @param {string} title - the title of the annotation (default: none)
-   * @param {string} file - the filename (default: none)
-   * @param {int} line - the file (start) line number (default: none)
-   * @param {int} endLine - the file end line number (default: none)
-   * @param {int} col - the column number (default: none)
-   * @param {int} endCol - the ending column number (default: none)
+   * @param {String} [title=undefined] - the title of the annotation
+   * @param {String} [file=undefined] - the filename
+   * @param {Number} [line=undefined] - the file start line number
+   * @param {Number} [endLine=undefined] - the file end line number
+   * @param {Number} [col=undefined] - the column number
+   * @param {Number} [endCol=undefined] - the ending column number
    *
    * @public
    */
@@ -424,12 +400,12 @@ module.exports = class Logger {
    * @see {@link https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-a-warning-message}
    *
    * @param {*} message - the message or object to log
-   * @param {string} title - the title of the annotation (default: none)
-   * @param {string} file - the filename (default: none)
-   * @param {int} line - the file (start) line number (default: none)
-   * @param {int} endLine - the file end line number (default: none)
-   * @param {int} col - the column number (default: none)
-   * @param {int} endCol - the ending column number (default: none)
+   * @param {String} [title=undefined] - the title of the annotation
+   * @param {String} [file=undefined] - the filename
+   * @param {Number} [line=undefined] - the file start line number
+   * @param {Number} [endLine=undefined] - the file end line number
+   * @param {Number} [col=undefined] - the column number
+   * @param {Number} [endCol=undefined] - the ending column number
    *
    * @public
    */
@@ -457,14 +433,14 @@ module.exports = class Logger {
    *  - Adding a locale-friendly timestamp
    *  - Colorization and text formatting
    *
-   * @param {string} message - the message to format
-   * @param {string} level - the name of the logging level
-   * @param {string} workflowCommand - the GitHub Workflow command to prepend to the message (default: none)
-   * @param {string} levelANSI - the ANSI code for the level (default: `Logger.ANSI.BOLD`)
-   * @param {string} messageANSI - the ANSI formatting code for the message (default: none)
-   * @param {string} dateANSI - the ANSI formatting code for the date/time (default: `Logger.ANSI.DIM`)
+   * @param {String} message - the message to format
+   * @param {String} level - the name of the logging level
+   * @param {String} [workflowCommand=""] - the GitHub Workflow command to prepend to the message
+   * @param {String} [levelANSI=Logger.ANSI.BOLD] - the ANSI code for the level
+   * @param {String} [messageANSI=""] - the ANSI formatting code for the message
+   * @param {String} [dateANSI=Logger.ANSI.DIM] - the ANSI formatting code for the date/time
    *
-   * @returns {string} the formatted message
+   * @returns {String} the formatted message
    *
    * @protected
    */
@@ -513,10 +489,10 @@ module.exports = class Logger {
    *
    * Cuts long words at the given length if longer than the `length` variable, as well.
    *
-   * @param {string} message - the message to word-wrap
-   * @param {int} length - the maximum length of a line to wrap with (default: 100)
+   * @param {String} message - the message to word-wrap
+   * @param {Number} [length=100] - the maximum length of a line to wrap with
    *
-   * @returns {Array} of wrapped strings
+   * @returns {String[]} of wrapped strings
    *
    * @protected
    */
@@ -527,12 +503,12 @@ module.exports = class Logger {
   /**
    * Masks a given value to hide a secret.
    *
-   * @param {string} value - the value to mask
-   * @param {int} reveal - how many characters to reveal at the front of the string (default: 0)
-   * @param {int} fixedLength - if defined, the fixed length of the string to show when masked (default: `value` length)
-   * @param {string} maskChar - the character to replace masked values with (default: `*`)
+   * @param {String} value - the value to mask
+   * @param {Number} [reveal=0] - how many characters to reveal at the front of the string
+   * @param {Number} [fixedLength=value_length] - if defined, the fixed length of the string to show when masked
+   * @param {String} [maskChar="*"] - the character to replace masked values with
    *
-   * @returns {string} the masked value
+   * @returns {String} the masked value
    *
    * @public
    */
@@ -559,14 +535,14 @@ module.exports = class Logger {
    * This is useful for creating large messages and strings formatted in mutiple, indented lines for code, but that
    * need to have that indentation whitespace removed when used.
    *
-   * @param {string} message - the message to reduce whitespace from
+   * @param {String} message - the message to reduce whitespace from
    *
-   * @returns {string} the shrunk message
+   * @returns {String} the shrunk message
    *
    * @public
    */
   shrinkWhitespace(message) {
-    return message.replace(/\s\s/g, " ").replace(/\n\s/g, "\n");
+    return message.replace(/\s\s+/g, " ").replace(/\n\s+/g, "\n").trim();
   }
 
   /**
@@ -578,7 +554,7 @@ module.exports = class Logger {
    *
    * @see {@link https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#grouping-log-lines}
    *
-   * @param {string} title - the title to add to the group collapse line (default: none)
+   * @param {String} [title=""] - the title to add to the group collapse line
    *
    * @public
    */

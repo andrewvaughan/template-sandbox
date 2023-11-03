@@ -17,10 +17,12 @@ module.exports = class WorkflowAbstract {
   /**
    * Instantiate common elements used in all classes.
    *
+   * @param {String} [loggerSubType=undefined] - an optional subtype to include with the logger name
+   *
    * @public @constructor
    */
-  constructor() {
-    this._logger = new Logger(this.constructor.name);
+  constructor(loggerSubType = undefined) {
+    this._logger = new Logger(this.constructor.name + (loggerSubType ? `(${loggerSubType})` : ""));
   }
 
   /**

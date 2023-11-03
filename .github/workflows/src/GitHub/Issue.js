@@ -123,15 +123,13 @@ module.exports = class Issue extends GraphQLAbstract {
    * @override @public @constructor
    */
   constructor(number, repository = undefined, owner = undefined) {
-    super();
+    super(number);
 
     this._debugCall("constructor", arguments);
 
     this.number = number;
     this.repository = repository ? repository : ActionContext.context.repo.repo;
     this.owner = owner ? owner : ActionContext.context.repo.owner;
-
-    this._logger = new Logger(`Issue(${this.repository}#${number})`);
 
     this._logger.debug(`New Issue(number: ${this.number}, repository: ${this.repository}, owner: ${this.owner})`);
 
@@ -296,65 +294,90 @@ module.exports = class Issue extends GraphQLAbstract {
       });
   }
 
-  // // Comments ----------------------------------------------------------------------------------------------------------
+  // Comments ----------------------------------------------------------------------------------------------------------
 
-  // /**
-  //  * Adds a comment to the Issue.
-  //  *
-  //  * @param {string|Comment} comment - the message to include in the comment
-  //  *
-  //  * @returns {Object<string, *>} - the full response from the GitHub REST API
-  //  *
-  //  * @public @async
-  //  */
-  // async addComment(comment) {
-  //   this._debugCall("addError", arguments);
+  /**
+   * Adds a comment to the Issue.
+   *
+   * @param {String} comment - the message to include in the comment
+   *
+   * @returns {Object<String, *>} - the full response from the GitHub REST API
+   *
+   * @public @async
+   */
+  async addComment(comment) {
+    this._debugCall("addComment", { comment: "..." });
 
-  //   throw new NotImplementedError();
-  // }
+    this._logger.verbose(comment);
 
-  // /**
-  //  * Adds a notice-formatted comment to the Issue.
-  //  *
-  //  * @param {string} message - the message to include in the comment
-  //  *
-  //  * @returns {Object<string, *>} - the full response from the GitHub REST API
-  //  *
-  //  * @public @async
-  //  */
-  // async addNotice(message) {
-  //   this._debugCall("addNotice", arguments);
+    const issueID = await this.id;
 
-  //   return this.addComment(`## :thought_balloon: Notice\n\n${message}`);
-  // }
+    return ActionContext.github.graphql(
+      `mutation AddCommentToIssue($clientID: String!, $issueID: ID!, $comment: String!) {
+        addComment(input: {
+          clientMutationId: $clientID,
+          subjectId: $issueID,
+          body: $comment
+        }) {
+          clientMutationId
+        }
+      }`,
+      {
+        clientID: crypto.randomUUID(),
+        issueID: issueID,
+        comment: comment,
+      }
+    );
+  }
 
-  // /**
-  //  * Adds a warning-formatted comment to the Issue.
-  //  *
-  //  * @param {string} message - the message to include in the comment
-  //  *
-  //  * @returns {Object<string, *>} - the full response from the GitHub REST API
-  //  *
-  //  * @public @async
-  //  */
-  // async addWarning(message) {
-  //   this._debugCall("addWarning", arguments);
+  /**
+   * Adds a notice-formatted comment to the Issue.
+   *
+   * @param {String} message - the message to include in the comment
+   *
+   * @returns {Object<String, *>} - the full response from the GitHub REST API
+   *
+   * @public @async
+   */
+  async addNotice(message) {
+    this._debugCall("addNotice", { message: "..." });
 
-  //   return this.addComment(`## :warning: Warning\n\n${message}`);
-  // }
+    this._logger.verbose(message);
 
-  // /**
-  //  * Adds an error-formatted comment to the Issue.
-  //  *
-  //  * @param {string} message - the message to include in the comment
-  //  *
-  //  * @returns {Object<string, *>>} - the full response from the GitHub REST API
-  //  *
-  //  * @public @async
-  //  */
-  // async addError(message) {
-  //   this._debugCall("addError", arguments);
+    return this.addComment(`## :thought_balloon: Notice\n\n${message}`);
+  }
 
-  //   return this.addComment(`## :rotating_light: Error\n\n${message}`);
-  // }
+  /**
+   * Adds a warning-formatted comment to the Issue.
+   *
+   * @param {string} message - the message to include in the comment
+   *
+   * @returns {Object<string, *>} - the full response from the GitHub REST API
+   *
+   * @public @async
+   */
+  async addWarning(message) {
+    this._debugCall("addWarning", { message: "..." });
+
+    this._logger.verbose(message);
+
+    return this.addComment(`## :warning: Warning\n\n${message}`);
+  }
+
+  /**
+   * Adds an error-formatted comment to the Issue.
+   *
+   * @param {string} message - the message to include in the comment
+   *
+   * @returns {Object<string, *>>} - the full response from the GitHub REST API
+   *
+   * @public @async
+   */
+  async addError(message) {
+    this._debugCall("addError", { message: "..." });
+
+    this._logger.verbose(message);
+
+    return this.addComment(`## :rotating_light: Error\n\n${message}`);
+  }
 };

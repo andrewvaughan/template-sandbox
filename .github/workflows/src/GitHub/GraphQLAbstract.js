@@ -57,12 +57,14 @@ module.exports = class GraphQLAbstract extends WorkflowAbstract {
   /**
    * A basic constructor that allows for overriding getters dynamically.
    *
+   * @param {String} [loggerSubType=undefined] - an optional subtype to include with the logger name
+   *
    * @returns {Proxy} representing this object, allowing for advanced getters and setters
    *
    * @public @constructor
    */
-  constructor() {
-    super();
+  constructor(loggerSubType = undefined) {
+    super(loggerSubType);
 
     // Allows this to override all getters that aren't explicitly set. Copy this line into any child constructors.
     return new Proxy(this, this);

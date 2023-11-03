@@ -35,45 +35,48 @@ module.exports = class OnIssues extends WorkflowAbstract {
     await issue.removeLabels([
       "Help Wanted",
     ]);
+
     this._logger.endGroup();
 
-    // // If the `Needs Triage` Label is still on the Issue, comment a warning
-    // logger.startGroup(`Checking for 'Needs Triage' Label on Issue #${issue.number}`);
 
-    // let found = false;
+    // If the `Needs Triage` Label is still on the Issue, comment a warning
+    this._logger.startGroup(`Checking for 'Needs Triage' Label on Issue #${issue.number}`);
 
-    // await labels.forEach(async (label) => {
-    //   if (label["name"].toLowerCase() == "needs triage") {
-    //     found = true;
+    const labels = await issue.labels;
+    let found = false;
 
-    //     logger.warning(
-    //       logger.shrinkWhitespace(
-    //         `Assigning non-triaged issues can be indicative of not following the defined Software Development Lifecycle. A
-    //       warning will be added to the Issue explaining the risk.`,
-    //         `Label 'Needs Triage' found on Issue #${issue.number} during user assignment`,
-    //       ),
-    //     );
+    await labels.forEach(async (label) => {
+      if (label.name.toLowerCase() == "needs triage") {
+        found = true;
 
-    //     await issue.addWarning(
-    //       logger.shrinkWhitespace(`
-    //       This Issue is still marked as being in
-    //       [Triage](https://github.com/andrewvaughan/template-core/blob/main/.github/CONTRIBUTING.md#issue-triage) -
-    //       however, a Contributor assignment was just made. Non-triaged issues may not be approved, and any work done on
-    //       unaccepted Issues cannot be guaranteed to be road-mapped.\n
-    //       Project Maintainers should Triage this issue or inform the Contributor on whether to move forward.
-    //     `),
-    //     );
-    //   }
-    // });
+        this._logger.warning(
+          this._logger.shrinkWhitespace(`
+            Assigning non-triaged issues can be indicative of not following the defined Software Development Lifecycle.
+            A warning will be added to the Issue explaining the risk.
+          `),
+          `Label 'Needs Triage' found on Issue #${issue.number} during user assignment`
+        );
 
-    // if (!found) {
-    //   logger.notice(
-    //     "Label 'Needs Triage' did not exist on issue during user assignment. This is expected.",
-    //     `Label 'Needs Triage' expectedly missing from Issue #${issue.number}`,
-    //   );
-    // }
+        return await issue.addWarning(
+          this._logger.shrinkWhitespace(`
+            This Issue is still marked as being in
+            [Triage](https://github.com/andrewvaughan/template-core/blob/main/.github/CONTRIBUTING.md#issue-triage) -
+            however, a Contributor assignment was just made. Non-triaged issues may not be approved, and any work done
+            on unaccepted Issues cannot be guaranteed to be road-mapped.\n
+            Project Maintainers should Triage this issue or inform the Contributor on whether to move forward.
+          `)
+        );
+      }
+    });
 
-    // logger.endGroup();
+    if (!found) {
+      this._logger.notice(
+        "Label 'Needs Triage' did not exist on issue during user assignment. This is expected.",
+        `Label 'Needs Triage' expectedly missing from Issue #${issue.number}`,
+      );
+    }
+
+    this._logger.endGroup();
 
     // // If the Issue's Project status isn't set, `Done`, or `Parking Lot`, comment a warning
     // logger.startGroup(`Checking for valid status on Issue #${issueNumber}`);

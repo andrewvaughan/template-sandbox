@@ -72,9 +72,7 @@ module.exports = class Label extends GraphQLAbstract {
    * @override @public @constructor
    */
   constructor(name, repository = undefined, owner = undefined) {
-    super();
-
-    this._logger = new Logger(`Label(${name})`);
+    super(name);
 
     this._debugCall("constructor", arguments);
 
